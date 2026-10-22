@@ -292,3 +292,169 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
             }
     except PermissionError as e:
         raise HTTPException(403, str(e))
+"""健康档案入库端点：文档 → 规则提取指标 → health_metrics
+
+隐私：全程本地规则，不调任何模型。
+"""
+
+from pydantic import BaseModel
+from fastapi import Header, HTTPException
+from datetime import date
+import hashlib
+import uuid
+
+
+class HealthIngestRequest(BaseModel):
+    person_name: str  # 如 "父亲"、"母亲"
+    file_name: str
+    content: str
+    measured_date: str = ""  # YYYY-MM-DD，空则用今天
+
+
+@app.post("/health/ingest")
+async def health_ingest(req: HealthIngestRequest,
+                        authorization: str = Header("")):
+    """
+    健康档案入库：
+    1. 文档存入 04_Health_Archive（走 RLS）
+    2. 规则提取健康指标 → health_metrics
+    3. 全程不调模型
+    """
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            from health_extractor import HealthExtractor
+
+            # 1. 存文档（04_Health_Archive）
+            file_hash = hashlib.sha256(req.content.encode()).hexdigest()
+            existing = await conn.fetchrow(
+                "SELECT doc_id FROM documents WHERE file_hash = $1 LIMIT 1",
+                file_hash,
+            )
+            if existing:
+                doc_id = existing["doc_id"]
+            else:
+                doc_id = uuid.uuid4()
+                await conn.execute(
+                    """INSERT INTO documents
+                       (doc_id, space_id, category, title, file_hash,
+                        wiki_file_path, created_by)
+                       VALUES ($1, 'space_family_01', '04_Health_Archive',
+                               $2, $3, $4, $5)""",
+                    doc_id, req.file_name, file_hash,
+                    f"wiki/04_Health_Archive/{req.file_name}", user_id,
+                )
+                await conn.execute(
+                    """INSERT INTO document_chunks
+                       (doc_id, space_id, category, doc_title,
+                        section_path, content)
+                       VALUES ($1, 'space_family_01', '04_Health_Archive',
+                               $2, '全文', $3)""",
+                    doc_id, req.file_name, req.content[:10000],
+                )
+
+            # 2. 规则提取指标（不调模型）
+            extractor = HealthExtractor()
+            m_date = (date.fromisoformat(req.measured_date)
+                      if req.measured_date else date.today())
+            metrics = extractor.extract(req.content, req.person_name, m_date)
+
+            # 3. 入库 health_metrics
+            inserted = 0
+            abnormal = []
+            for m in metrics:
+                await conn.execute(
+                    """INSERT INTO health_metrics
+                       (space_id, source_doc_id, person_name, metric_name,
+                        metric_value, unit, reference_range, is_abnormal,
+                        measured_date)
+                       VALUES ('space_family_01', $1, $2, $3, $4, $5, $6, $7, $8)""",
+                    doc_id, m.person_name, m.metric_name, m.metric_value,
+                    m.unit, m.reference_range, m.is_abnormal, m.measured_date,
+                )
+                inserted += 1
+                if m.is_abnormal:
+                    abnormal.append(f"{m.metric_name}: {m.metric_value}{m.unit}")
+
+            # 4. 写台账
+            ledger.log_ingest(
+                title=f"[健康]{req.file_name}",
+                doc_id=str(doc_id),
+                category="04_Health_Archive",
+                space_id="space_family_01",
+                file_hash=file_hash,
+                routing_rule="R-01-health",
+            )
+
+            return {
+                "doc_id": str(doc_id),
+                "metrics_extracted": inserted,
+                "abnormal": abnormal,
+                "privacy_note": "全程规则提取，未调用任何模型",
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+@app.get("/health/metrics")
+async def health_metrics(person_name: str = "",
+                         authorization: str = Header("")):
+    """查询健康指标（走 RLS，只能看有权限的）"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            if person_name:
+                rows = await conn.fetch(
+                    """SELECT person_name, metric_name, metric_value, unit,
+                              reference_range, is_abnormal, measured_date
+                       FROM health_metrics
+                       WHERE person_name = $1
+                       ORDER BY measured_date DESC, metric_name""",
+                    person_name,
+                )
+            else:
+                rows = await conn.fetch(
+                    """SELECT person_name, metric_name, metric_value, unit,
+                              reference_range, is_abnormal, measured_date
+                       FROM health_metrics
+                       ORDER BY measured_date DESC, person_name, metric_name
+                       LIMIT 100""",
+                )
+            return {
+                "metrics": [
+                    {
+                        "person": r["person_name"],
+                        "metric": r["metric_name"],
+                        "value": float(r["metric_value"]),
+                        "unit": r["unit"],
+                        "ref": r["reference_range"],
+                        "abnormal": r["is_abnormal"],
+                        "date": str(r["measured_date"]),
+                    }
+                    for r in rows
+                ]
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+"""Web UI 静态服务：加到 main.py"""
+
+from fastapi.responses import FileResponse
+import os
+
+WEB_DIR = os.environ.get("WEB_DIR", "/app/web")
+
+
+@app.get("/")
+async def web_ui():
+    index = os.path.join(WEB_DIR, "index.html")
+    if os.path.exists(index):
+        return FileResponse(index)
+    return {"message": "Web UI 未部署", "api": "ok"}

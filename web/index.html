@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContextHub</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+       background: #f5f5f5; color: #333; }
+.header { background: #1a1a2e; color: white; padding: 16px 24px;
+          display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; }
+.header .token { display: flex; gap: 8px; align-items: center; }
+.header input { padding: 6px 12px; border: none; border-radius: 4px; width: 200px; }
+.container { max-width: 900px; margin: 0 auto; padding: 24px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab { padding: 10px 20px; background: white; border: none; border-radius: 8px;
+       cursor: pointer; font-size: 14px; }
+.tab.active { background: #1a1a2e; color: white; }
+.panel { display: none; background: white; border-radius: 12px; padding: 24px; }
+.panel.active { display: block; }
+.search-box { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-box input { flex: 1; padding: 12px; border: 1px solid #ddd;
+                    border-radius: 8px; font-size: 14px; }
+.search-box button, .btn { padding: 12px 24px; background: #1a1a2e; color: white;
+                           border: none; border-radius: 8px; cursor: pointer; }
+.result { border-bottom: 1px solid #eee; padding: 12px 0; }
+.result .cite { color: #666; font-size: 13px; margin-bottom: 4px; }
+.result .snippet { font-size: 14px; }
+.ledger { font-size: 13px; line-height: 1.8; white-space: pre-wrap;
+          background: #fafafa; padding: 16px; border-radius: 8px; }
+.metric { display: flex; justify-content: space-between; padding: 8px 0;
+          border-bottom: 1px solid #eee; font-size: 14px; }
+.metric .abnormal { color: #d32f2f; font-weight: bold; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; margin-bottom: 4px; font-size: 13px; color: #666; }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+.form-group textarea { height: 120px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📚 ContextHub</h1>
+  <div class="token">
+    <input type="password" id="token" placeholder="Token">
+    <button class="btn" onclick="saveToken()">保存</button>
+  </div>
+</div>
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('search')">🔍 检索</button>
+    <button class="tab" onclick="showTab('ask')">💬 问答</button>
+    <button class="tab" onclick="showTab('ingest')">📥 入库</button>
+    <button class="tab" onclick="showTab('health')">❤️ 健康</button>
+    <button class="tab" onclick="showTab('ledger')">📋 台账</button>
+  </div>
+
+  <div id="panel-search" class="panel active">
+    <div class="search-box">
+      <input id="q" placeholder="输入关键词检索..." onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">检索</button>
+    </div>
+    <div id="search-results"></div>
+  </div>
+
+  <div id="panel-ask" class="panel">
+    <div class="search-box">
+      <input id="ask-q" placeholder="问一个问题..." onkeydown="if(event.key==='Enter')doAsk()">
+      <button onclick="doAsk()">提问</button>
+    </div>
+    <div id="ask-result"></div>
+  </div>
+
+  <div id="panel-ingest" class="panel">
+    <div class="form-group">
+      <label>文件名</label>
+      <input id="ingest-name" placeholder="如：VPN配置说明.md">
+    </div>
+    <div class="form-group">
+      <label>内容</label>
+      <textarea id="ingest-content" placeholder="粘贴文档内容..."></textarea>
+    </div>
+    <button class="btn" onclick="doIngest()">入库</button>
+    <div id="ingest-result" style="margin-top:12px"></div>
+  </div>
+
+  <div id="panel-health" class="panel">
+    <div class="form-group">
+      <label>家人</label>
+      <select id="health-person">
+        <option value="">全部</option>
+        <option value="父亲">父亲</option>
+        <option value="母亲">母亲</option>
+      </select>
+    </div>
+    <button class="btn" onclick="loadMetrics()">查询指标</button>
+    <div id="metrics-list" style="margin-top:12px"></div>
+    <hr style="margin:20px 0">
+    <h3 style="margin-bottom:12px">录入体检报告</h3>
+    <div class="form-group">
+      <label>家人姓名</label>
+      <input id="health-name" placeholder="如：父亲">
+    </div>
+    <div class="form-group">
+      <label>文件名</label>
+      <input id="health-file" placeholder="如：体检报告2026.md">
+    </div>
+    <div class="form-group">
+      <label>报告内容</label>
+      <textarea id="health-content" placeholder="粘贴体检报告文本..."></textarea>
+    </div>
+    <button class="btn" onclick="doHealthIngest()">录入</button>
+    <div id="health-result" style="margin-top:12px"></div>
+  </div>
+
+  <div id="panel-ledger" class="panel">
+    <button class="btn" onclick="loadLedger()">刷新台账</button>
+    <div id="ledger-content" class="ledger" style="margin-top:12px">点击刷新查看</div>
+  </div>
+</div>
+
+<script>
+const API = '';
+function token() { return document.getElementById('token').value; }
+function saveToken() {
+  localStorage.setItem('ch_token', token());
+  alert('已保存');
+}
+document.getElementById('token').value = localStorage.getItem('ch_token') || '';
+function headers() {
+  return { 'Content-Type': 'application/json',
+           'Authorization': 'Bearer ' + token() };
+}
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+async function doSearch() {
+  const q = document.getElementById('q').value;
+  const r = await fetch(API + '/search', {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ query: q, limit: 10 })
+  });
+  const d = await r.json();
+  document.getElementById('search-results').innerHTML =
+    (d.results || []).map(x =>
+      `<div class="result"><div class="cite">${x.citation}</div>` +
+      `<div class="snippet">${x.snippet}...</div></div>`
+    ).join('') || '无结果';
+}
+async function doAsk() {
+  const q = document.getElementById('ask-q').value;
+  document.getElementById('ask-result').innerHTML = '思考中...';
+  const r = await fetch(API + '/ask', {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({ question: q, limit: 5 })
+  });
+  const d = await r.json();
+  document.getElementById('ask-result').innerHTML =
+    `<div class="result"><div>${(d.answer || '').replace(/\n/g, '<br>')}</div>` +
+    `<div class="cite" style="margin-top:8px">引用：<br>${(d.citations || []).join('<br>')}</div>` +
+    `<div class="cite">via ${d.provider || ''}</div></div>`;
+}
+async function doIngest() {
+  const r = await fetch(API + '/ingest', {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({
+      file_name: document.getElementById('ingest-name').value,
+      content: document.getElementById('ingest-content').value
+    })
+  });
+  const d = await r.json();
+  document.getElementById('ingest-result').innerHTML =
+    `<div class="cite">${d.status === 'COMMITTED' ? '✅ 已入库' : d.message || JSON.stringify(d)}` +
+    `${d.doc_id ? '<br>doc_id: ' + d.doc_id : ''}</div>`;
+}
+async function loadMetrics() {
+  const p = document.getElementById('health-person').value;
+  const r = await fetch(API + '/health/metrics?person_name=' + encodeURIComponent(p),
+    { headers: headers() });
+  const d = await r.json();
+  document.getElementById('metrics-list').innerHTML =
+    (d.metrics || []).map(m =>
+      `<div class="metric"><span>${m.person} - ${m.metric}</span>` +
+      `<span class="${m.abnormal ? 'abnormal' : ''}">${m.value}${m.unit}` +
+      `${m.abnormal ? ' ⚠️' : ''}</span></div>`
+    ).join('') || '无数据';
+}
+async function doHealthIngest() {
+  const r = await fetch(API + '/health/ingest', {
+    method: 'POST', headers: headers(),
+    body: JSON.stringify({
+      person_name: document.getElementById('health-name').value,
+      file_name: document.getElementById('health-file').value,
+      content: document.getElementById('health-content').value
+    })
+  });
+  const d = await r.json();
+  document.getElementById('health-result').innerHTML =
+    `<div class="cite">✅ 提取 ${d.metrics_extracted || 0} 个指标` +
+    `${(d.abnormal || []).length ? '<br>⚠️ 异常：' + d.abnormal.join('、') : ''}</div>`;
+  loadMetrics();
+}
+async function loadLedger() {
+  const r = await fetch(API + '/ledger?n=30', { headers: headers() });
+  const d = await r.json();
+  document.getElementById('ledger-content').textContent = d.recent || '无';
+}
+</script>
+</body>
+</html>
