@@ -74,6 +74,12 @@ async def list_tools() -> list[Tool]:
                           "properties": {"person_name": {"type": "string"},
                                          "metric_name": {"type": "string"}},
                           "required": ["person_name"]}),
+        Tool(name="code_search", description="代码符号检索（IDE 编码感知）。",
+             inputSchema={"type": "object",
+                          "properties": {"query": {"type": "string"},
+                                         "repo_path": {"type": "string"},
+                                         "limit": {"type": "integer", "default": 10}},
+                          "required": ["query"]}),
     ]
 
 
@@ -82,8 +88,10 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     pool = await get_pool()
     try:
         async with profiled_connection(pool, _token()) as (conn, user_id):
+            from code_search import _code_search as _cs
             fn = {"search": _search, "ingest": _ingest, "commit": _commit,
-                  "review": _review, "asset": _asset, "health": _health}.get(name)
+                  "review": _review, "asset": _asset, "health": _health,
+                  "code_search": _cs}.get(name)
             if not fn:
                 text = f"未知工具: {name}"
             elif name in ("ingest", "commit"):
