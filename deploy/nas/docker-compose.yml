@@ -1,0 +1,49 @@
+# ContextHub Phase 0 - NAS Dogfood Environment
+# PostgreSQL 16 + pgvector + (gateway placeholder)
+# Usage: docker compose up -d
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: contexthub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: contexthub_migrator
+      POSTGRES_PASSWORD: ${PG_MIGRATOR_PASSWORD:-change_me_in_env}
+      POSTGRES_DB: contexthub
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:5432:5432"  # 仅本机，NAS 内网访问走 Tailscale
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contexthub_migrator -d contexthub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - contexthub-net
+
+  # Phase 0: 网关占位，Phase 1 实现
+  # gateway:
+  #   build: ../../gateway
+  #   container_name: contexthub-gateway
+  #   restart: unless-stopped
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgresql://contexthub_app:${PG_APP_PASSWORD}@postgres:5432/contexthub
+  #   ports:
+  #     - "127.0.0.1:8000:8000"
+  #   networks:
+  #     - contexthub-net
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  contexthub-net:
+    driver: bridge
