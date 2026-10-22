@@ -122,7 +122,53 @@ async def search_knowledge(req: SearchRequest, authorization: str = Header("")):
         raise HTTPException(403, str(e))
 
 
-def route_category(file_name: str, instruction: str | None) -> tuple[str, str, float]:
+
+async def route_category_llm(file_name: str, content_snippet: str | None,
+                             instruction: str | None) -> tuple[str, str, float]:
+    """
+    LLM 分类为主，关键词规则兜底。
+    返回 (category, rule_id, confidence)。
+    """
+    # 用户明确指定 → 直接用，不调 LLM
+    if instruction and any(k in instruction for k in ["工作", "生活", "家庭", "健康"]):
+        return route_category_rules(file_name, instruction)
+
+    # 调 LLM 分类
+    try:
+        from model_adapter import get_adapter
+        adapter = get_adapter()
+        snippet = (content_snippet or "")[:800]
+        prompt = f"""你是文档分类器。把下面的文档分到且仅分到以下 4 类之一：
+- 01_Work：工作相关（项目、会议、需求、接口文档、技术手册、教程）
+- 02_Life：生活相关（发票、账单、水电费、物业、购物、旅游、美食、药店名单）
+- 03_Family：家庭相关（孩子、生日、派对、家庭成员）
+- 04_Health_Archive：健康档案（体检报告、化验单、检验报告、处方、病历、医院单据）
+
+文件名：{file_name}
+内容摘要：
+{snippet}
+
+只输出 JSON：{{"category": "01_Work|02_Life|03_Family|04_Health_Archive", "confidence": 0.0-1.0, "reason": "一句话理由"}}
+不要输出其他内容。"""
+        resp = await adapter.chat(prompt, caller="route")
+        import json as _json
+        # 提取 JSON（resp 是 ModelResponse，用 .text）
+        txt = (resp.text if hasattr(resp, "text") else str(resp)).strip()
+        if txt.startswith("```"):
+            txt = txt.split("\n", 1)[1].rsplit("```", 1)[0]
+        data = _json.loads(txt)
+        cat = data.get("category", "")
+        conf = float(data.get("confidence", 0.5))
+        if cat in ("01_Work", "02_Life", "03_Family", "04_Health_Archive"):
+            return cat, "R-LLM", min(max(conf, 0.0), 1.0)
+    except Exception:
+        pass  # LLM 失败 → 走规则兜底
+
+    # 兜底：关键词规则
+    return route_category_rules(file_name, instruction)
+
+
+def route_category_rules(file_name: str, instruction: str | None) -> tuple[str, str, float]:
     """
     规则优先路由。返回 (category, rule_id, confidence)。
     confidence < 0.5 → 进 _review 隔离，待人工确认。
@@ -196,8 +242,10 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 }
 
             # 2. 路由
-            category, rule_id, confidence = route_category(
-                req.file_name, req.user_instruction)
+            category, rule_id, confidence = await route_category_llm(
+                req.file_name,
+                req.content[:800] if req.content else None,
+                req.user_instruction)
             space_id = (
                 req.target_space_id
                 if req.target_space_id != "AUTO"
@@ -634,8 +682,8 @@ async def ingest_file(
                 }
 
             # 3. 路由
-            category, rule_id, confidence = route_category(
-                title, user_instruction)
+            category, rule_id, confidence = await route_category_llm(
+                title, markdown[:800] if markdown else None, user_instruction)
             await _task_set(conn, task_id, "ROUTING")
             # 低置信度 → 进 _review 隔离
             needs_review = confidence < 0.5
