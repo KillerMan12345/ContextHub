@@ -35,9 +35,13 @@ class DocumentParser:
         result = md.convert(str(path))
 
         markdown = result.text_content or ""
-        # OCR 兜底：扫描件 PDF 无文本层时，用 qwen-vl 识别
-        if not markdown.strip() and path.suffix.lower() == ".pdf":
-            markdown = await self._ocr_pdf(str(path)) or ""
+        suffix = path.suffix.lower()
+        # OCR 兜底：扫描件 PDF 或图片无文本时，用 qwen-vl 识别
+        if not markdown.strip():
+            if suffix == ".pdf":
+                markdown = await self._ocr_pdf(str(path)) or ""
+            elif suffix in (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"):
+                markdown = await self._ocr_image(str(path)) or ""
         title = path.stem
 
         # 尝试从内容提取标题（第一个 # 标题）
@@ -64,6 +68,28 @@ class DocumentParser:
         finally:
             path.unlink(missing_ok=True)
 
+
+
+    async def _ocr_image(self, img_path: str) -> str:
+        """单张图片 → qwen-vl OCR。"""
+        try:
+            from providers.bailian_provider import BailianProvider
+        except ImportError:
+            return ""
+        try:
+            with open(img_path, "rb") as f:
+                img_data = f.read()
+            provider = BailianProvider()
+            text = await provider.vision(
+                "请识别图片中的所有文字，按原排版输出。"
+                "如果是化验单、体检报告，保留项目名称、数值、单位、参考范围。",
+                img_data,
+            )
+            if "404" not in text and "developer.mozilla.org" not in text:
+                return f"## 图片 OCR\n\n{text}"
+            return ""
+        except Exception:
+            return ""
 
     async def _ocr_pdf(self, pdf_path: str, max_pages: int = 5) -> str:
         """
