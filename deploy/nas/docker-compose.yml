@@ -68,7 +68,7 @@ services:
     volumes:
       - /volume1/docker/contexthub/data:/data
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     networks:
       - contexthub-net
 
