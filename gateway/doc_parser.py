@@ -18,7 +18,7 @@ class DocumentParser:
             self._md = MarkItDown()
         return self._md
 
-    def parse(self, file_path: str) -> dict:
+    async def parse(self, file_path: str) -> dict:
         """
         解析文档为 Markdown。
         返回: { markdown: str, title: str, file_hash: str, pages: int }
@@ -35,6 +35,9 @@ class DocumentParser:
         result = md.convert(str(path))
 
         markdown = result.text_content or ""
+        # OCR 兜底：扫描件 PDF 无文本层时，用 qwen-vl 识别
+        if not markdown.strip() and path.suffix.lower() == ".pdf":
+            markdown = await self._ocr_pdf(str(path)) or ""
         title = path.stem
 
         # 尝试从内容提取标题（第一个 # 标题）
@@ -60,6 +63,48 @@ class DocumentParser:
             return self.parse(str(path))
         finally:
             path.unlink(missing_ok=True)
+
+
+    async def _ocr_pdf(self, pdf_path: str, max_pages: int = 5) -> str:
+        """
+        扫描件 PDF → qwen-vl OCR。
+        用 pypdfium2 渲染为图片，调百炼 vision API。
+        """
+        try:
+            import pypdfium2 as pdfium
+        except ImportError:
+            return ""
+        try:
+            from providers.bailian_provider import BailianProvider
+        except ImportError:
+            return ""
+
+        texts = []
+        try:
+            pdf = pdfium.PdfDocument(pdf_path)
+            n = min(len(pdf), max_pages)
+            provider = BailianProvider()
+            for i in range(n):
+                page = pdf[i]
+                # 渲染为图片（150dpi 足够 OCR）
+                bitmap = page.render(scale=2).to_pil()
+                import io
+                buf = io.BytesIO()
+                bitmap.save(buf, format="JPEG", quality=85)
+                img_data = buf.getvalue()
+                # 调 qwen-vl
+                try:
+                    text = await provider.vision(
+                        "请识别图片中的所有文字，按原排版输出。"
+                        "如果是化验单，保留项目名称、数值、单位、参考范围。",
+                        img_data,
+                    )
+                    texts.append(f"\n\n## 第{i+1}页（OCR）\n\n{text}")
+                except Exception as e:
+                    texts.append(f"\n\n## 第{i+1}页（OCR失败: {e}）\n")
+            return "\n".join(texts)
+        except Exception:
+            return ""
 
     def _sha256(self, path: Path) -> str:
         h = hashlib.sha256()

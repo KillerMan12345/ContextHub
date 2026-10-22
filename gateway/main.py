@@ -599,7 +599,7 @@ async def ingest_file(
             # 1. 解析
             parser = DocumentParser()
             try:
-                parsed = parser.parse(tmp_path)
+                parsed = await parser.parse(tmp_path)
             except Exception as e:
                 raise HTTPException(400, f"文档解析失败: {e}")
 
