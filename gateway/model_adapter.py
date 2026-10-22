@@ -1,16 +1,14 @@
 """
-统一模型适配层 (Model Adapter)
+统一模型适配层 (Model Adapter) - 修订版
 
-设计原则（对应架构图）：
-- 不在 Obsidian 装模型插件，不在 n8n 每个节点直调模型
-- 所有模型调用走这一层：Chat / Vision / Embedding 三个接口
-- 路由规则：隐私敏感（健康档案）强制本地，其他按配置走云端
-- MVP 阶段就是 Python 模块，不独立部署
+变更（2026-10-22）：
+- 去掉 Ollama：NAS 内存吃紧（20+ 容器，可用 6.7G），跑不动本地大模型
+- 隐私红线改走纯规则：健康档案不调任何模型，只做规则分类+关键词提取
+- 通用任务走百炼云端
 
 Providers:
-- ollama: 本地（隐私红线：健康档案的 embedding/分类必须走这里）
-- bailian: 阿里云百炼（通用 chat）
-- 后续可加：gemini（用户有 Pro 订阅）、openai 等
+- bailian: 阿里云百炼（chat/vision）
+- rule: 本地规则引擎（分类、关键词，不调模型）
 """
 
 from abc import ABC, abstractmethod
@@ -18,13 +16,14 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 import os
+import re
 
 
 class TaskType(Enum):
-    CHAT = "chat"           # 问答、组织答案
-    VISION = "vision"       # 图片理解
-    EMBEDDING = "embedding"  # 向量
-    CLASSIFY = "classify"   # 文档分类（路由用）
+    CHAT = "chat"
+    VISION = "vision"
+    EMBEDDING = "embedding"
+    CLASSIFY = "classify"
 
 
 @dataclass
@@ -32,9 +31,7 @@ class ModelRequest:
     task: TaskType
     prompt: str = ""
     image_data: Optional[bytes] = None
-    # 隐私标记：True 则强制本地，忽略云端配置
     privacy_sensitive: bool = False
-    # 调用方：search / ingest / health
     caller: str = ""
 
 
@@ -47,8 +44,6 @@ class ModelResponse:
 
 
 class ModelProvider(ABC):
-    """Provider 接口：每个模型服务实现这个"""
-
     @abstractmethod
     def name(self) -> str: ...
 
@@ -65,46 +60,82 @@ class ModelProvider(ABC):
     async def embed(self, text: str) -> list[float]: ...
 
 
+class RuleProvider(ModelProvider):
+    """
+    纯规则引擎，不调模型。
+    用于隐私敏感任务：只做分类和关键词提取，数据不出网关。
+    """
+
+    def name(self) -> str:
+        return "rule"
+
+    def supports(self, task: TaskType) -> bool:
+        return task in (TaskType.CLASSIFY,)
+
+    async def chat(self, prompt: str) -> str:
+        raise NotImplementedError("隐私任务不做 LLM 问答，只返回检索原文")
+
+    async def vision(self, prompt: str, image_data: bytes) -> str:
+        raise NotImplementedError("隐私任务不支持图片理解")
+
+    async def embed(self, text: str) -> list[float]:
+        raise NotImplementedError("NAS 跑不动本地 embedding，暂不做向量")
+
+    def classify(self, title: str, snippet: str) -> str:
+        t = (title + " " + snippet).lower()
+        if any(k in t for k in ["体检", "血压", "血糖", "医院", "医生",
+                                 "处方", "化验", "健康", "病历"]):
+            return "04_Health_Archive"
+        if any(k in t for k in ["家庭", "孩子", "女儿", "父母",
+                                 "生日", "派对"]):
+            return "03_Family"
+        if any(k in t for k in ["生活", "购物", "旅游", "美食", "电影"]):
+            return "02_Life"
+        return "01_Work"
+
+    def extract_keywords(self, text: str, top_k: int = 10) -> list[str]:
+        """简单关键词提取：按词频（去停用词）"""
+        stop = set("的了是在有和与或但而于对就都也还不没很最更以从到把被让给"
+                   "个种些这么那么这样那样这里那里这个那个这些那些")
+        words = re.findall(r'[\u4e00-\u9fff]{2,}', text)
+        freq: dict[str, int] = {}
+        for w in words:
+            if w not in stop and len(w) >= 2:
+                freq[w] = freq.get(w, 0) + 1
+        return sorted(freq, key=freq.get, reverse=True)[:top_k]
+
+
 class ModelAdapter:
     """
-    统一入口。路由逻辑：
-    1. privacy_sensitive=True → 强制本地 Ollama（隐私红线，不可覆盖）
-    2. embedding → 优先本地 bge-m3（省钱+快）
-    3. 其他 → 按 MODEL_PROVIDER 环境变量（默认 bailian）
+    路由逻辑（修订版）：
+    1. privacy_sensitive=True → 走 rule（纯本地规则，不调模型）
+    2. embedding → 暂不支持（NAS 跑不动）
+    3. 其他 → 百炼
     """
 
     def __init__(self):
         self._providers: dict[str, ModelProvider] = {}
+        self._rule = RuleProvider()
         self._default_cloud = os.environ.get("MODEL_PROVIDER", "bailian")
 
     def register(self, provider: ModelProvider):
         self._providers[provider.name()] = provider
 
+    @property
+    def rule(self) -> RuleProvider:
+        return self._rule
+
     def _route(self, req: ModelRequest) -> ModelProvider:
-        # 红线：隐私敏感强制本地
+        # 隐私敏感：纯规则，不调模型
         if req.privacy_sensitive:
-            p = self._providers.get("ollama")
-            if not p:
-                raise RuntimeError("隐私任务需要本地 Ollama，但未注册")
-            if not p.supports(req.task):
-                raise RuntimeError(f"Ollama 不支持 {req.task}")
-            return p
+            return self._rule
 
-        # embedding 优先本地
-        if req.task == TaskType.EMBEDDING and "ollama" in self._providers:
-            p = self._providers["ollama"]
-            if p.supports(TaskType.EMBEDDING):
-                return p
+        if req.task == TaskType.EMBEDDING:
+            raise RuntimeError("向量功能暂未启用（NAS 跑不动本地模型）")
 
-        # 默认云端
         p = self._providers.get(self._default_cloud)
         if not p:
             raise RuntimeError(f"Provider 未注册: {self._default_cloud}")
-        if not p.supports(req.task):
-            # 降级到本地
-            p = self._providers.get("ollama")
-            if not p or not p.supports(req.task):
-                raise RuntimeError(f"无可用 provider 支持 {req.task}")
         return p
 
     async def chat(self, prompt: str,
@@ -116,42 +147,30 @@ class ModelAdapter:
         text = await p.chat(prompt)
         return ModelResponse(text=text, provider=p.name(), model="")
 
-    async def embed(self, text: str,
-                    privacy_sensitive: bool = False) -> ModelResponse:
-        req = ModelRequest(task=TaskType.EMBEDDING, prompt=text,
-                           privacy_sensitive=privacy_sensitive)
-        p = self._route(req)
-        vec = await p.embed(text)
-        return ModelResponse(embedding=vec, provider=p.name(), model="")
-
     async def classify(self, title: str, snippet: str,
                        privacy_sensitive: bool = False) -> str:
-        """文档分类：返回类别 ID。规则优先，LLM 只做兜底。"""
-        # 规则先行（和网关的 route_category 保持一致）
-        t = (title + " " + snippet).lower()
-        if any(k in t for k in ["体检", "血压", "血糖", "医院", "医生", "处方", "化验", "健康"]):
-            return "04_Health_Archive"
-        if any(k in t for k in ["家庭", "孩子", "女儿", "父母", "生日", "派对"]):
-            return "03_Family"
-        if any(k in t for k in ["生活", "购物", "旅游", "美食", "电影"]):
-            return "02_Life"
-        if any(k in t for k in ["工作", "项目", "会议", "代码", "文档"]):
+        # 分类永远先走规则
+        result = self._rule.classify(title, snippet)
+        if result != "01_Work":
+            return result  # 规则命中，直接返回
+
+        # 规则没命中且非隐私 → LLM 兜底
+        if privacy_sensitive:
             return "01_Work"
 
-        # 规则没命中，LLM 兜底
-        prompt = (
-            f"文档标题：《{title}》\n摘要：{snippet[:200]}\n"
-            "请分类，只返回以下之一：01_Work / 02_Life / 03_Family / 04_Health_Archive"
-        )
-        resp = await self.chat(prompt, privacy_sensitive=privacy_sensitive,
-                               caller="classify")
-        for cat in ["01_Work", "02_Life", "03_Family", "04_Health_Archive"]:
-            if cat in resp.text:
-                return cat
-        return "01_Work"  # 兜底
+        prompt = (f"文档标题：《{title}》\n摘要：{snippet[:200]}\n"
+                  "请分类，只返回以下之一："
+                  "01_Work / 02_Life / 03_Family / 04_Health_Archive")
+        try:
+            resp = await self.chat(prompt, caller="classify")
+            for cat in ["01_Work", "02_Life", "03_Family", "04_Health_Archive"]:
+                if cat in resp.text:
+                    return cat
+        except RuntimeError:
+            pass
+        return "01_Work"
 
 
-# 全局单例
 _adapter: Optional[ModelAdapter] = None
 
 
@@ -159,10 +178,6 @@ def get_adapter() -> ModelAdapter:
     global _adapter
     if _adapter is None:
         _adapter = ModelAdapter()
-        # 自动注册已配置的 providers
-        if os.environ.get("OLLAMA_HOST"):
-            from providers.ollama_provider import OllamaProvider
-            _adapter.register(OllamaProvider())
         if os.environ.get("BAILIAN_API_KEY"):
             from providers.bailian_provider import BailianProvider
             _adapter.register(BailianProvider())
