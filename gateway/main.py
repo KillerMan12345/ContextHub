@@ -143,10 +143,13 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 file_hash,
             )
             if existing:
+                await _task_set(conn, task_id, "COMMITTED",
+                                existing["doc_id"], "去重命中")
                 return {
                     "doc_id": str(existing["doc_id"]),
                     "status": "DUPLICATE",
                     "message": f"已存在：《{existing['title']}》",
+                    "task_id": task_id,
                 }
 
             # 2. 路由
@@ -530,6 +533,13 @@ async def ingest_file(
         async with profiled_connection(pool, token) as (conn, user_id):
             from doc_parser import DocumentParser
 
+            # 0. 任务登记
+            idem_key = f"file:{file.filename}:{len(content)}"
+            task_id = await _task_create(
+                conn, user_id, file.filename or "unknown",
+                target_space_id, idem_key)
+            await _task_set(conn, task_id, "PRECHECKING")
+
             # 1. 解析
             parser = DocumentParser()
             try:
@@ -550,22 +560,30 @@ async def ingest_file(
                 file_hash,
             )
             if existing:
+                await _task_set(conn, task_id, "COMMITTED",
+                                existing["doc_id"], "去重命中")
                 return {
                     "doc_id": str(existing["doc_id"]),
                     "status": "DUPLICATE",
                     "message": f"已存在：《{existing['title']}》",
+                    "task_id": task_id,
                 }
 
             # 3. 路由
             category, rule_id, confidence = route_category(
                 title, user_instruction)
+            await _task_set(conn, task_id, "ROUTING")
             # 低置信度 → 进 _review 隔离
             needs_review = confidence < 0.5
             space_id = (target_space_id
                         if target_space_id != "AUTO"
                         else "space_personal_u1")
 
+            await _task_set(
+                conn, task_id,
+                "NEEDS_REVIEW" if needs_review else "STAGED")
             # 4. 写库（含版本链 + raw）
+            await _task_set(conn, task_id, "COMMITTING")
             doc_id = uuid.uuid4()
             wiki_path = f"wiki/{category}/{title}.md"
             # 保存原始文件
@@ -648,8 +666,14 @@ async def ingest_file(
                 routing_rule=rule_id,
             )
 
+            await _task_set(
+                conn, task_id,
+                "NEEDS_REVIEW" if needs_review else "COMMITTED",
+                doc_id,
+                "待人工确认" if needs_review else None)
             return {
                 "doc_id": str(doc_id),
+                "task_id": task_id,
                 "status": "NEEDS_REVIEW" if needs_review else "COMMITTED",
                 "category": category,
                 "rule": rule_id,
@@ -662,6 +686,11 @@ async def ingest_file(
             }
     except PermissionError as e:
         raise HTTPException(403, str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        # 尝试标记失败（conn 可能已关闭，忽略错误）
+        raise HTTPException(500, f"入库失败: {e}")
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
@@ -698,6 +727,41 @@ def extract_version_key(file_name: str) -> tuple[str, str | None]:
         key = re.sub(r'[（(].*[）)]', '', key).strip()
         return key or base, ver
     return base, None
+async def _task_create(conn, user_id: str, file_name: str,
+                       target_space: str, idem_key: str) -> str:
+    """创建任务 RECEIVED，幂等。"""
+    task_id = str(uuid.uuid4())
+    try:
+        await conn.execute(
+            """INSERT INTO ingestion_tasks
+               (task_id, idempotency_key, user_id, target_space_id,
+                task_status, source_file_name)
+               VALUES ($1, $2, $3, $4, 'RECEIVED', $5)""",
+            task_id, idem_key, user_id, target_space, file_name,
+        )
+    except Exception:
+        row = await conn.fetchrow(
+            "SELECT task_id, task_status FROM ingestion_tasks "
+            "WHERE idempotency_key=$1",
+            idem_key,
+        )
+        if row:
+            return row["task_id"]
+        raise
+    return task_id
+
+
+async def _task_set(conn, task_id: str, status: str,
+                    doc_id=None, reason: str | None = None):
+    await conn.execute(
+        """UPDATE ingestion_tasks
+           SET task_status=$1, result_doc_id=$2::uuid,
+               review_reason=$3, updated_at=NOW()
+           WHERE task_id=$4""",
+        status, str(doc_id) if doc_id else None, reason, task_id,
+    )
+
+
 
 
 async def handle_version_chain(conn, space_id: str, version_key: str,
@@ -955,6 +1019,47 @@ async def list_inbox(
                         "space_id": r["space_id"],
                         "created_at": r["created_at"].isoformat(),
                         "reason": r.get("review_reason", ""),
+                    }
+                    for r in rows
+                ],
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+@app.get("/tasks")
+async def list_tasks(
+    limit: int = 20,
+    authorization: str = Header(""),
+):
+    """查询入库任务状态。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            rows = await conn.fetch(
+                """SELECT task_id, source_file_name, task_status,
+                          result_doc_id, review_reason,
+                          created_at, updated_at
+                   FROM ingestion_tasks
+                   ORDER BY created_at DESC
+                   LIMIT $1""",
+                min(limit, 100),
+            )
+            return {
+                "count": len(rows),
+                "tasks": [
+                    {
+                        "task_id": r["task_id"],
+                        "file": r["source_file_name"],
+                        "status": r["task_status"],
+                        "doc_id": str(r["result_doc_id"])
+                                  if r["result_doc_id"] else None,
+                        "reason": r["review_reason"],
+                        "created_at": r["created_at"].isoformat(),
+                        "updated_at": r["updated_at"].isoformat(),
                     }
                     for r in rows
                 ],
