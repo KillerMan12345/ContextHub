@@ -458,3 +458,137 @@ async def web_ui():
     if os.path.exists(index):
         return FileResponse(index)
     return {"message": "Web UI 未部署", "api": "ok"}
+"""文件上传入库端点：接收文件 → markitdown 解析 → 切分 → 入库 → 落盘
+
+支持：PDF、Word、Excel、PPT、图片、HTML、CSV、TXT、MD
+"""
+
+from fastapi import Header, HTTPException, UploadFile, File, Form
+from typing import Optional
+import hashlib
+import uuid
+import os
+
+
+@app.post("/ingest/file")
+async def ingest_file(
+    file: UploadFile = File(...),
+    target_space_id: str = Form("AUTO"),
+    user_instruction: Optional[str] = Form(None),
+    authorization: str = Header(""),
+):
+    """
+    文件上传入库：
+    1. 收文件 → 存临时
+    2. markitdown 解析 → Markdown
+    3. 按标题切分 chunks（章节级引用）
+    4. 去重 → 路由 → 写库
+    5. 落盘到 /data/wiki/（Obsidian 可读）
+    """
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+
+    # 存临时文件
+    tmp_path = f"/tmp/upload_{uuid.uuid4().hex}_{file.filename}"
+    content = await file.read()
+    with open(tmp_path, "wb") as f:
+        f.write(content)
+
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            from doc_parser import DocumentParser
+
+            # 1. 解析
+            parser = DocumentParser()
+            try:
+                parsed = parser.parse(tmp_path)
+            except Exception as e:
+                raise HTTPException(400, f"文档解析失败: {e}")
+
+            markdown = parsed["markdown"]
+            title = parsed["title"]
+            file_hash = parsed["file_hash"]
+
+            if not markdown.strip():
+                raise HTTPException(400, "文档内容为空，无法入库")
+
+            # 2. 去重
+            existing = await conn.fetchrow(
+                "SELECT doc_id, title FROM documents WHERE file_hash = $1 LIMIT 1",
+                file_hash,
+            )
+            if existing:
+                return {
+                    "doc_id": str(existing["doc_id"]),
+                    "status": "DUPLICATE",
+                    "message": f"已存在：《{existing['title']}》",
+                }
+
+            # 3. 路由
+            category, rule_id = route_category(title, user_instruction)
+            space_id = (target_space_id
+                        if target_space_id != "AUTO"
+                        else "space_personal_u1")
+
+            # 4. 写库
+            doc_id = uuid.uuid4()
+            wiki_path = f"wiki/{category}/{title}.md"
+            await conn.execute(
+                """INSERT INTO documents
+                   (doc_id, space_id, category, title, file_hash,
+                    wiki_file_path, created_by)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                doc_id, space_id, category, title,
+                file_hash, wiki_path, user_id,
+            )
+
+            # 5. 切分入库
+            chunks = parser.chunk_markdown(markdown)
+            for ch in chunks:
+                await conn.execute(
+                    """INSERT INTO document_chunks
+                       (doc_id, space_id, category, doc_title,
+                        section_path, content)
+                       VALUES ($1, $2, $3, $4, $5, $6)""",
+                    doc_id, space_id, category, title,
+                    ch["section_path"], ch["content"][:10000],
+                )
+
+            # 6. 落盘（Obsidian 可读）
+            disk_path = f"/data/wiki/{space_id}/{category}/{title}.md"
+            os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+            with open(disk_path, "w", encoding="utf-8") as f:
+                f.write(f"---\n")
+                f.write(f"title: {title}\n")
+                f.write(f"doc_id: {doc_id}\n")
+                f.write(f"category: {category}\n")
+                f.write(f"space: {space_id}\n")
+                f.write(f"---\n\n")
+                f.write(markdown)
+
+            # 7. 台账
+            ledger.log_ingest(
+                title=title,
+                doc_id=str(doc_id),
+                category=category,
+                space_id=space_id,
+                file_hash=file_hash,
+                routing_rule=rule_id,
+            )
+
+            return {
+                "doc_id": str(doc_id),
+                "status": "COMMITTED",
+                "category": category,
+                "rule": rule_id,
+                "chunks": len(chunks),
+                "chars": len(markdown),
+                "wiki_path": disk_path,
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
