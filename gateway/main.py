@@ -352,6 +352,21 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
                     "warning": str(e),
                 }
 
+            # v2.3 FR-19: 记录模型调用
+            try:
+                import time as _t
+                await conn.execute(
+                    """INSERT INTO model_runs
+                       (task_id, provider, model_id, prompt_version,
+                        input_tokens, output_tokens, status)
+                       VALUES ($1, $2, $3, 'ask-v1', $4, $5, 'OK')""",
+                    str(__import__('uuid').uuid4()),
+                    resp.provider, resp.model_id or "qwen-plus",
+                    len(prompt), len(resp.text),
+                )
+            except Exception:
+                pass
+
             return {
                 "answer": resp.text,
                 "citations": citations,
@@ -804,11 +819,33 @@ async def handle_version_chain(conn, space_id: str, version_key: str,
     - 新文档 supersedes_doc_id 指向旧文档
     返回被替代的旧文档信息（或 None）
     """
-    old = await conn.fetchrow(
-        """SELECT doc_id, title, version_label FROM documents
-           WHERE space_id = $1 AND version_key = $2 AND is_latest = TRUE
-           LIMIT 1""",
+    # v2.3: 用 document_series 系列锁防并发版本冲突
+    series = await conn.fetchrow(
+        "SELECT * FROM document_series "
+        "WHERE space_id=$1 AND version_key=$2 FOR UPDATE",
         space_id, version_key,
+    )
+    if not series:
+        await conn.execute(
+            """INSERT INTO document_series
+               (space_id, version_key, current_doc_id)
+               VALUES ($1, $2, $3)""",
+            space_id, version_key, new_doc_id,
+        )
+        return None
+    old = None
+    if series["current_doc_id"]:
+        old = await conn.fetchrow(
+            "SELECT doc_id, title, version_label FROM documents "
+            "WHERE doc_id=$1",
+            series["current_doc_id"],
+        )
+    # 更新系列指针
+    await conn.execute(
+        """UPDATE document_series SET current_doc_id=$1,
+           revision=revision+1, updated_at=NOW()
+           WHERE space_id=$2 AND version_key=$3""",
+        new_doc_id, space_id, version_key,
     )
     if old:
         await conn.execute(
@@ -1209,5 +1246,46 @@ async def promote_document(
             return {"new_doc_id": str(new_id),
                     "target_space": req.target_space_id,
                     "status": "PROMOTED"}
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+class ExpiringResponse(BaseModel):
+    doc_id: str
+    title: str
+    expires_at: str
+    days_left: int
+
+
+@app.get("/expiring")
+async def list_expiring(
+    days: int = 30,
+    authorization: str = Header(""),
+):
+    """列出即将过期的文档（TTL）。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            rows = await conn.fetch(
+                """SELECT doc_id, title, expires_at,
+                          EXTRACT(DAY FROM expires_at - NOW())::int
+                          AS days_left
+                   FROM documents
+                   WHERE expires_at IS NOT NULL
+                     AND expires_at < NOW() + ($1 || ' days')::interval
+                     AND doc_status = 'ACTIVE'
+                   ORDER BY expires_at""",
+                days,
+            )
+            return {"expiring": [
+                {"doc_id": str(r["doc_id"]),
+                 "title": r["title"],
+                 "expires_at": r["expires_at"].isoformat(),
+                 "days_left": r["days_left"]}
+                for r in rows
+            ]}
     except PermissionError as e:
         raise HTTPException(403, str(e))
