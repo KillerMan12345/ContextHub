@@ -82,3 +82,19 @@ class LivingLedger:
         lines = self.path.read_text(encoding="utf-8").split("\n")
         # 简单实现：返回最后 n*8 行
         return "\n".join(lines[-(n * 8):])
+
+    def log_commit(self, topic: str, content: str,
+                   event_id: str, user_id: str):
+        """通用提交记录（对话沉淀等）。"""
+        entry = (
+            f"## {self._ts()} 笔记\n"
+            f"- 主题: {topic}\n"
+            f"- event_id: `{event_id}`\n"
+            f"- 用户: {user_id}\n"
+            f"- 内容: {content}\n\n"
+        )
+        self._append(entry)
+
+    def _append(self, entry: str):
+        with open(self.path, "a", encoding="utf-8") as f:
+            f.write(entry)

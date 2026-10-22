@@ -76,6 +76,23 @@ services:
     networks:
       - contexthub-net
 
+  inbox-watcher:
+    image: python:3.12-slim
+    container_name: contexthub-inbox
+    restart: unless-stopped
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      - GATEWAY_URL=http://gateway:8000
+      - INBOX_TOKEN=${INBOX_TOKEN:-test-token-001}
+    volumes:
+      - /volume1/docker/contexthub/data:/data
+      - /volume1/docker/contexthub/worker/inbox_watcher.py:/app/inbox_watcher.py:ro
+    command: ["python3", "/app/inbox_watcher.py", "--daemon"]
+    networks:
+      - contexthub-net
+
 volumes:
   pgdata:
     driver: local

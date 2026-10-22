@@ -533,11 +533,14 @@ async def ingest_file(
         async with profiled_connection(pool, token) as (conn, user_id):
             from doc_parser import DocumentParser
 
-            # 0. 任务登记
+            # 0. 任务登记（space_id 先解析）
+            _resolved_space = (target_space_id
+                               if target_space_id != "AUTO"
+                               else "space_personal_u1")
             idem_key = f"file:{file.filename}:{len(content)}"
             task_id = await _task_create(
                 conn, user_id, file.filename or "unknown",
-                target_space_id, idem_key)
+                _resolved_space, idem_key)
             await _task_set(conn, task_id, "PRECHECKING")
 
             # 1. 解析
@@ -617,19 +620,18 @@ async def ingest_file(
                     tmp_path, file.filename or title, reason)
                 ledger.log_review(
                     doc_id=str(doc_id),
-                    action="AUTO_ISOLATED",
-                    reason=reason,
+                    reason=f"[AUTO_ISOLATED] {reason}",
                 )
             # 处理版本替代
             superseded = await handle_version_chain(
                 conn, space_id, version_key, doc_id, title)
             if superseded:
-                ledger.log_commit(
-                    topic=f"版本替代: {title}",
-                    content=f"新版本 {version_label or ''} 替代了 "
-                            f"《{superseded['title']}》({superseded['version_label'] or ''})",
-                    event_id=str(uuid.uuid4()),
-                    user_id=user_id,
+                ledger.log_supersede(
+                    old_title=superseded['title'],
+                    old_doc_id=superseded['doc_id'],
+                    new_title=title,
+                    new_doc_id=str(doc_id),
+                    reason=f"新版本 {version_label or ''}",
                 )
 
             # 5. 切分入库
@@ -729,26 +731,21 @@ def extract_version_key(file_name: str) -> tuple[str, str | None]:
     return base, None
 async def _task_create(conn, user_id: str, file_name: str,
                        target_space: str, idem_key: str) -> str:
-    """创建任务 RECEIVED，幂等。"""
+    """创建任务 RECEIVED，幂等（ON CONFLICT）。"""
     task_id = str(uuid.uuid4())
-    try:
-        await conn.execute(
-            """INSERT INTO ingestion_tasks
-               (task_id, idempotency_key, user_id, target_space_id,
-                task_status, source_file_name)
-               VALUES ($1, $2, $3, $4, 'RECEIVED', $5)""",
-            task_id, idem_key, user_id, target_space, file_name,
-        )
-    except Exception:
-        row = await conn.fetchrow(
-            "SELECT task_id, task_status FROM ingestion_tasks "
-            "WHERE idempotency_key=$1",
-            idem_key,
-        )
-        if row:
-            return row["task_id"]
-        raise
-    return task_id
+    await conn.execute(
+        """INSERT INTO ingestion_tasks
+           (task_id, idempotency_key, user_id, target_space_id,
+            task_status, source_file_name)
+           VALUES ($1, $2, $3, $4, 'RECEIVED', $5)
+           ON CONFLICT (idempotency_key) DO NOTHING""",
+        task_id, idem_key, user_id, target_space, file_name,
+    )
+    row = await conn.fetchrow(
+        "SELECT task_id FROM ingestion_tasks WHERE idempotency_key=$1",
+        idem_key,
+    )
+    return row["task_id"] if row else task_id
 
 
 async def _task_set(conn, task_id: str, status: str,
@@ -899,8 +896,7 @@ async def review_document(
                 )
                 ledger.log_review(
                     doc_id=req.doc_id,
-                    action="APPROVE",
-                    reason=req.reason or "",
+                    reason=f"[APPROVE] {req.reason or ''}",
                 )
                 return {"doc_id": req.doc_id, "status": "APPROVED"}
 
@@ -919,8 +915,7 @@ async def review_document(
                 )
                 ledger.log_review(
                     doc_id=req.doc_id,
-                    action=f"RECLASSIFY → {req.new_category}",
-                    reason=req.reason or "",
+                    reason=f"[RECLASSIFY → {req.new_category}] {req.reason or ''}",
                 )
                 return {"doc_id": req.doc_id, "status": "RECLASSIFIED",
                         "new_category": req.new_category}
@@ -943,8 +938,7 @@ async def review_document(
                 )
                 ledger.log_review(
                     doc_id=req.doc_id,
-                    action=f"ROLLBACK → {prev_id}",
-                    reason=req.reason or "",
+                    reason=f"[ROLLBACK → {prev_id}] {req.reason or ''}",
                 )
                 return {"doc_id": req.doc_id, "status": "ROLLED_BACK",
                         "restored": str(prev_id)}
