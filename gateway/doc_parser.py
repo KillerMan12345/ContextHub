@@ -99,9 +99,11 @@ class DocumentParser:
                         "如果是化验单，保留项目名称、数值、单位、参考范围。",
                         img_data,
                     )
-                    texts.append(f"\n\n## 第{i+1}页（OCR）\n\n{text}")
-                except Exception as e:
-                    texts.append(f"\n\n## 第{i+1}页（OCR失败: {e}）\n")
+                    # 过滤掉 API 错误信息
+                    if "404" not in text and "developer.mozilla.org" not in text:
+                        texts.append(f"\n\n## 第{i+1}页（OCR）\n\n{text}")
+                except Exception:
+                    pass  # 静默失败，不存错误信息
             return "\n".join(texts)
         except Exception:
             return ""

@@ -140,11 +140,16 @@ def route_category(file_name: str, instruction: str | None) -> tuple[str, str, f
             return "02_Life", "R-03-explicit", 1.0
         return "01_Work", "R-00-explicit", 1.0
 
-    if any(k in text for k in ["体检", "血压", "血糖", "医院", "医生", "处方", "化验", "健康"]):
+    if any(k in text for k in ["体检", "血压", "血糖", "医院", "医生", "处方", "化验", "健康",
+                                "检验", "化验单", "血常规", "尿常规", "肝功", "肾功",
+                                "血脂", "电解质", "凝血", "血型", "感染", "前列腺",
+                                "葡萄糖", "钾测定", "normal_color"]):
         return "04_Health_Archive", "R-01", 0.9
     if any(k in text for k in ["家庭", "孩子", "女儿", "父母", "生日", "派对"]):
         return "03_Family", "R-02", 0.9
-    if any(k in text for k in ["生活", "购物", "旅游", "美食", "电影"]):
+    if any(k in text for k in ["生活", "购物", "旅游", "美食", "电影",
+                                "发票", "账单", "水费", "电费", "燃气", "物业",
+                                "dzfp", "药店名单"]):
         return "02_Life", "R-03", 0.9
     # 工作类关键词 → 中置信度
     if any(k in text for k in ["工作", "项目", "会议", "报告", "文档", "需求",
