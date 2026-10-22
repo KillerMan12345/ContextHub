@@ -47,6 +47,7 @@ services:
       - N8N_ENCRYPTION_KEY=chctx_n8n_encryption_key_2026_fixed_32chars
       - WEBHOOK_URL=http://localhost:5679/
       - GENERIC_TIMEZONE=Asia/Shanghai
+      - N8N_SECURE_COOKIE=false
     volumes:
       - n8n_data:/home/node/.n8n
     ports:
