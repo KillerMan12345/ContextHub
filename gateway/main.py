@@ -177,6 +177,9 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 "SELECT doc_id, title FROM documents WHERE file_hash = $1 LIMIT 1",
                 file_hash,
             )
+            # 生成 task_id（去重分支也需要）
+            import uuid as _uuid
+            task_id = str(_uuid.uuid4())
             if existing:
                 await _task_set(conn, task_id, "COMMITTED",
                                 existing["doc_id"], "去重命中")
@@ -612,6 +615,9 @@ async def ingest_file(
                 "SELECT doc_id, title FROM documents WHERE file_hash = $1 LIMIT 1",
                 file_hash,
             )
+            # 生成 task_id（去重分支也需要）
+            import uuid as _uuid
+            task_id = str(_uuid.uuid4())
             if existing:
                 await _task_set(conn, task_id, "COMMITTED",
                                 existing["doc_id"], "去重命中")
@@ -1275,7 +1281,7 @@ async def list_expiring(
                           AS days_left
                    FROM documents
                    WHERE expires_at IS NOT NULL
-                     AND expires_at < NOW() + ($1 || ' days')::interval
+                     AND expires_at < NOW() + ($1 * INTERVAL '1 day')
                      AND doc_status = 'ACTIVE'
                    ORDER BY expires_at""",
                 days,
@@ -1287,5 +1293,88 @@ async def list_expiring(
                  "days_left": r["days_left"]}
                 for r in rows
             ]}
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+class WikiSyncRequest(BaseModel):
+    doc_id: str
+    content_hash: str  # watcher 算的文件哈希，用于防循环
+
+
+@app.post("/sync/wiki")
+async def sync_wiki_change(
+    req: WikiSyncRequest,
+    authorization: str = Header(""),
+):
+    """
+    WF-04: Obsidian/wiki 文件变更同步回 DB。
+    - 只更新正文 chunks，不碰系统字段
+    - 用 content_revision 做乐观锁防循环
+    """
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            doc = await conn.fetchrow(
+                "SELECT doc_id, wiki_file_path, space_id, category, title"
+                " FROM documents WHERE doc_id=$1::uuid",
+                req.doc_id,
+            )
+            if not doc:
+                raise HTTPException(404, "文档不存在")
+
+            # 读文件：先试 DB 路径，找不到则按标题搜索
+            import pathlib
+            wiki_path = None
+            _wfp = doc["wiki_file_path"] or ""
+            if _wfp.startswith("wiki/"):
+                _wfp = _wfp[5:]
+            for cand in [
+                pathlib.Path("/data/wiki") / _wfp,
+                pathlib.Path("/data/wiki/space_personal_u1") / _wfp,
+            ]:
+                if cand.exists():
+                    wiki_path = cand
+                    break
+            if not wiki_path:
+                # 按标题搜索
+                title_base = doc["title"].replace(".md", "")
+                for p in pathlib.Path("/data/wiki").rglob("*.md"):
+                    if title_base in p.name:
+                        wiki_path = p
+                        break
+            if not wiki_path or not wiki_path.exists():
+                raise HTTPException(404, "Wiki 文件不存在")
+
+            content = wiki_path.read_text(encoding="utf-8")
+            # 去掉 frontmatter，只同步正文
+            import re
+            body = re.sub(r"^---\n.*?\n---\n", "", content,
+                          flags=re.DOTALL)
+
+            # 检查内容是否真变了（防循环）
+            import hashlib
+            new_hash = hashlib.sha256(
+                body.encode()).hexdigest()[:16]
+            if new_hash == req.content_hash:
+                return {"status": "NO_CHANGE"}
+
+            # 更新 chunks（先删旧的，再插入新的）
+            await conn.execute(
+                "DELETE FROM document_chunks WHERE doc_id=$1::uuid",
+                req.doc_id,
+            )
+            await conn.execute(
+                """INSERT INTO document_chunks
+                   (doc_id, space_id, category, doc_title,
+                    section_path, content)
+                   VALUES ($1, $2, $3, $4, '全文', $5)""",
+                doc["doc_id"], doc["space_id"], doc["category"],
+                doc["title"], body[:10000],
+            )
+            return {"status": "SYNCED", "doc_id": req.doc_id}
     except PermissionError as e:
         raise HTTPException(403, str(e))

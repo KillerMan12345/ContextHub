@@ -67,11 +67,26 @@ def sync_file_to_db(path: Path):
         print(f"跳过（无 doc_id）: {path.name}", flush=True)
         return
 
-    # TODO: 调用网关 API 更新
-    # 1. 检查系统字段是否被篡改
-    # 2. 更新 document_chunks
-    # 3. 更新 content_revision
-    print(f"检测到变更: {path.name} (doc_id={doc_id[:8]}...)", flush=True)
+    # 调用网关 /sync/wiki
+    import urllib.request, json
+    content_hash = file_hash(path)
+    payload = json.dumps({
+        "doc_id": doc_id,
+        "content_hash": content_hash,
+    }).encode()
+    try:
+        req = urllib.request.Request(
+            f"{GATEWAY_URL}/sync/wiki",
+            data=payload,
+            headers={"Content-Type": "application/json",
+                     "Authorization": f"Bearer {TOKEN}"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            result = json.loads(r.read().decode())
+            print(f"同步 {path.name}: {result.get('status')}",
+                  flush=True)
+    except Exception as e:
+        print(f"同步失败 {path.name}: {e}", flush=True)
 
 
 def watch():
