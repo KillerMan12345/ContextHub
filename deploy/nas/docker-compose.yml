@@ -67,6 +67,8 @@ services:
       - DATABASE_URL=postgresql://contexthub_app:change_me_in_env@postgres:5432/contexthub
       - LEDGER_PATH=/data/living-ledger.md
       - WEB_DIR=/app/web
+      - BAILIAN_API_KEY=${BAILIAN_API_KEY:-}
+      - MODEL_PROVIDER=bailian
     volumes:
       - /volume1/docker/contexthub/data:/data
     ports:
