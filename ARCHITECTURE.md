@@ -1,1 +1,209 @@
-IyBDb250ZXh0SHViIOacgOe7iOaetuaehOaWueahiO+8iOWQiOW5tueJiO+8iQoKPiAqKueJiOacrO+8mioqIHYzLjDvvIjlkIjlubblrprnqL/vvIkKPiAqKuaXpeacn++8mioqIDIwMjYtMTAtMjIKPiAqKuadpea6kO+8mioqIHYyLjHvvIhHZW1pbmkg6LW36I2J77yJKyB2Mi4y77yIQ2hhdEdQVCDor4TlrqHvvInpgJDpobnlr7nmr5TlkI7nmoTni6znq4vnu5PorroKPiAqKuWumuS9je+8mioqIOW8gOa6kOmhueebru+8m05BUyDkuLroh6rmiJHlrp7ot7Xnjq/looPvvJvnm67moIfmjqjlub/oh7Ppg6jpl6jkvb/nlKgKPiAqKuiuuOWPr+ivge+8mioqIEFwYWNoZS0yLjDvvIjmnKzpmLbmrrXnoa7lrprvvIzkuI0gZGVmZXJyZWTvvIkKCi0tLQoKIyMgMC4g6K+E5a6h57uT6K6677ya5LiN56uZ6Zif77yM6YCQ6aG55Y+W5LyYCgp8IOe7tOW6piB8IOmHh+eUqCB8IOeQhueUsSB8CnwtLS18LS0tfC0tLXwKfCDlronlhajmnrbmnoTvvIhSTFPjgIFmYWlsLWNsb3NlZOOAgUdVQyDorqTnn6XvvIkgfCB2Mi4yIHwg5a6e6LSo5oCn5beu6Led77yMdjIuMSDlj6rmj5DkuobmpoLlv7UgfAp8IG44biDlrprkvY0gfCB2Mi4yIOeahOWOn+WImSArIHYyLjEg55qE5a6e6Le1IHwg57yW5o6S5b2SIG44bu+8jOaOiOadg+atu+WuiOe9keWFs+Wxgu+8m+W8gOa6kOmhueebrumcgOimgeWPr+inhuWMluW3peS9nOa1gemZjeS9juaOpeaJi+mXqOanmyB8CnwgTGl2aW5nIExlZGdlciDlj7DotKYgfCB2Mi4xIHwgdjIuMiDpgZfmvI/vvIznu4bnspLluqbnn6Xor4bmsonmt4DnmoTlhbPplK7mnLrliLbvvIzlv4XpobvliqDlm54gfAp8IFBoYXNlIDAg5YWI6aqM6K+B5YaN5byA5Y+RIHwgdjIuMiB8IOW3peeoi+e6quW+i++8jOS4jeWmpeWNjyB8Cnwg5qOA57Si562W55WlIHwgdjIuMSDotbfmraUg4oaSIHYyLjIg55uu5qCHIHwg5YWIIHFtZCDovbvph4/mnKzlnLDmkJzntKLot5HpgJrvvIzlkJHph4/mt7flkIjmo4DntKLkuLrkvJjljJbpobkgfAp8IOeJiOacrOaooeWeiyB8IHYyLjIg6KGo6L+wIHwg5pu05bmy5YeA77yM562J5Lu3IHwKfCDkurrnnIvnlYzpnaIgfCDmlrDlop7liKTmlq0gfCBPYnNpZGlhbiDnlZnnu5nkuKrkurrmt7HluqbnlKjmiLfvvJvpg6jpl6jmjqjlub/lv4XpobvlgZogV2ViIFVJIHwKfCDmjqjlub/pkqnlrZAgfCDmlrDlop7liKTmlq0gfCBNQ1AgKyBJREUg57yW56CB5oSf55+l6L+bIFBoYXNlIDHvvIzkuI3mmK8gUGhhc2UgMyB8CgotLS0KCiMjIDEuIOaetuaehOWOn+WIme+8iOWumueov++8iQoKfCBJRCB8IOWOn+WImSB8IOivtOaYjiB8CnwtLS18LS0tfC0tLXwKfCBELTAxIHwg5Y6f5aeL5paH5Lu25LiN5Y+v5Y+YIHwg5Y6f5aeL5a2X6IqC5Y+q6K+777ybU0hBLTI1NiDnlKjkuo7ljrvph43kuI7lrozmlbTmgKfmoKHpqowgfAp8IEQtMDIgfCBXaWtpIE1hcmtkb3duIOaYr+efpeivhuato+aWh+i9veS9kyB8IOS6uuWPr+ivu+OAgeWPr+e8lui+ke+8m09ic2lkaWFuIOebtOaOpeaJk+W8gCB8CnwgRC0wMyB8IOezu+e7n+WFg+aVsOaNrueUseaVsOaNruW6k+euoSB8IGRvY19pZOOAgeepuumXtOOAgeeJiOacrOaMh+mSiOOAgeS7u+WKoeeKtuaAgeWPqui1sOWPl+aOp+WGmeWFpe+8m0Zyb250bWF0dGVyIOWvueW6lOWtl+auteaYr+aKleW9se+8jOS4jeWPr+aJi+aUueeUn+aViCB8CnwgRC0wNCB8IOajgOe0oue0ouW8leaYr+a0vueUn+aVsOaNriB8IOWQkemHj+OAgeWFqOaWh+OAgeWIh+eJh+Wdh+WPr+mHjeW7uu+8m+S4jeS9nOS4uuadg+mZkOS6i+Wunua6kCB8CnwgRC0wNSB8IOS4jeehruWumui3r+eUsei/m+malOemuyB8IOemgeatouiHquWKqOi3qOi+ueeVjOWFseS6q++8m+W9kuWxnuS4jeaYjui/myBORUVEU19SRVZJRVcgfAp8IEQtMDYgfCDniYjmnKzllK/kuIDmgKcgfCDlkIzkuIAgYChzcGFjZV9pZCwgdmVyc2lvbl9rZXkpYCDkuIvlj6rmnInkuIDkuKrlvZPliY3niYjmnKzvvIzmlbDmja7lupPllK/kuIDnuqbmnZ/kv53or4EgfAp8IEQtMDcgfCDml6Dot6jns7vnu5/ljp/lrZDkuovliqEgfCDmlofku7bns7vnu58gKyBQb3N0Z3JlU1FMIOS5i+mXtOeUqCBTYWdh77yI5pqC5a2Y4oaS5LqL5Yqh4oaS5Y+R5biD4oaS56Gu6K6k77yJ77yM5Y+v5oGi5aSN44CB5Y+v5a6h6K6hIHwKfCBELTA4IHwg5o6I5p2DID0gVG9rZW4g4oipIE1lbWJlcnNoaXAg4oipIOepuumXtOinhOWImSDiiKkg57G75Yir6KeE5YiZIHwg57y65Lu75L2V5LiA6aG55Y2z5ouS57udIHwKfCBELTA5IHwgUkxTIOaYr+e6tea3semYsuW+oSB8IOS4jeabv+S7o+e9keWFs+WxguaOiOadg++8m0dVQyDlj5jph4/kuI3mmK/ni6znq4vouqvku73lh63or4EgfAp8IEQtMTAgfCDliIbmnJ/kuqTku5ggfCDlhYjkuKrkurrpl63njq/vvIhOQVMg6aqM6K+B77yJ77yM5YaN5a625bqt5YGl5bq377yM5YaN6YOo6Zeo5o6o5bm/77yb5pWw5o2u5qih5Z6L5LiA5qyh5Yiw5L2NIHwKCi0tLQoKIyMgMi4g57O757uf5oC75L2T5p625p6ECgpgYGB0ZXh0CuKUjOKUgCDlrqLmiLfnq6/lsYIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCuKUgiBJREUgKE1DUCkg4pSCIE9ic2lkaWFuIOKUgiBXZWIgVUkgKFBoYXNlIDIrKSDilIIg6aOe5LmmIEJvdCAgICAgIOKUggrilJTilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilKzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJgKICAgICAgICAgICAgICAgICAgICAgICDilIIgTUNQIC8gSFRUUFPvvJvlj6rkvKAgZG9jX2lk77yM5LiN5Lyg6KO46Lev5b6ECiAgICAgICAgICAgICAgICAgICAgICAg4pa8CuKUjOKUgCDnvZHlhbPlsYIgKEZhc3RBUEkgKyBGYXN0TUNQKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAK4pSCIFRva2VuIOagoemqjCDihpIgTWVtYmVyc2hpcCDop6PmnpAg4oaSIOWPguaVsOagoemqjCDihpIg5o6I5p2DIOKGkiDlrqHorqEgICDilIIK4pSCIOW3peWFtzogc2VhcmNoIC8gaW5nZXN0IC8gY29tbWl0IC8gcmV2aWV3IC8gYXNzZXQgLyBoZWFsdGjilIIK4pSU4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSs4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSs4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSYCiAgICAgICAgICAg4pSCIOWPl+aOpyBTUUwgKyBSTFMgICAgICAgICAgICAgIOKUgiDku7vliqEgSUQKICAgICAgICAgICDilrwgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWvArilIzilIAgUG9zdGdyZVNRTCAxNiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAgIOKUjOKUgCBuOG4gLyBXb3JrZXIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCuKUgiDnlKjmiLcv56m66Ze0L+aIkOWRmC9Ub2tlbiAgICAgIOKUgiAg4pSCIFdGLTAxIOWFpeW6k+eKtuaAgeacuiAgICAgICAgIOKUggrilIIg5paH5qGjL+eJiOacrC/ku7vliqEv5a6h6K6hICAgICAgIOKUgiAg4pSCIFdGLTAyIOWBpeW6t+aMh+agh+aPkOWPliAgICAgICDilIIK4pSCIGNodW5rcy/lhajmlocvKOWQkemHjyopICAgICAgIOKUgiAg4pSCIFdGLTAzIOavj+WRqCBMaW50ICAgICAgICAg4pSCCuKUgiBSTFMg5by65Yi2ICsg5pyA5bCP5p2D6ZmQ6KeS6ImyICAg4pSCICDilIIgV0YtMDQgT2JzaWRpYW4g5Zue5YaZICAgICDilIIK4pSU4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSs4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSYICDilJTilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilKzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJgKICAgICAgICAgICDilJTilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilKzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJgKICAgICAgICAgICAgICAgICAgICAgICAgICDilrwK4pSM4pSAIOaWh+S7tuWtmOWCqCAoTkFTKSDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAK4pSCIHJhdy8gKOS4jeWPr+WPmOWOn+S7tikg4pSCIHdpa2kvIChNYXJrZG93bikg4pSCIF9yZXZpZXcvICjpmpTnprvljLopIOKUggrilJTilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJgKYGBgCgoq5ZCR6YeP57Si5byV5Li65Y+v6YCJ5LyY5YyW6aG577yM5Yid5pyf55SoIFBvc3RncmVTUUwg5YWo5paH5qOA57Si77yIRlRT77yJKyBxbWQg5pys5Zyw5pCc57Si44CCKgoKLS0tCgojIyAzLiDmlbDmja7mqKHlnovvvIjmoLjlv4PooajvvIkKCmBgYHNxbAotLSDnqbrpl7TvvJrkuKrkurov5a625bqtL+e7hOe7h+e7n+S4gOaKveixoQpzcGFjZXMoc3BhY2VfaWQsIHNwYWNlX25hbWUsIHNwYWNlX2FyY2hldHlwZSwgcGFyZW50X3NwYWNlX2lkLAogICAgICAgdHJlZV9wYXRoIGx0cmVlLCB2YXVsdF9yZWxfcGF0aCwgYWxsb3dlZF9sMV9mb2xkZXJzIFRFWFRbXSkKCi0tIOaIkOWRmO+8muiwgeWcqOS7gOS5iOepuumXtOaYr+S7gOS5iOinkuiJsgpzcGFjZV9tZW1iZXJzaGlwcyh1c2VyX2lkLCBzcGFjZV9pZCwgcm9sZSwgcmV2b2tlZF9hdCkKLS0gcm9sZTogUkVBREVSIC8gV1JJVEVSIC8gQURNSU4KCi0tIFRva2Vu77ya5Zy65pmv5YyW6KeG5Zu+6ZKl5YyZCmFjY2Vzc190b2tlbnModG9rZW5faGFzaCwgdXNlcl9pZCwgcHJvZmlsZV9uYW1lLAogICAgICAgICAgICAgIGFsbG93ZWRfcGVyc29uYWxfY2F0ZWdvcmllcyBURVhUW10sICAtLSBGYWlsLUNsb3NlZO+8muepuj3mi5Lnu50KICAgICAgICAgICAgICBleHBpcmVzX2F0LCByZXZva2VkX2F0KQoKLS0g5paH5qGj77ya54mI5pys6ZO+5qC45b+DCmRvY3VtZW50cyhkb2NfaWQsIHNwYWNlX2lkLCBjYXRlZ29yeSwgdGl0bGUsCiAgICAgICAgICBmaWxlX2hhc2gsIHdpa2lfZmlsZV9wYXRoLAogICAgICAgICAgdmVyc2lvbl9rZXksIHZlcnNpb25fbGFiZWwsIGlzX2xhdGVzdCwKICAgICAgICAgIHJlbGF0aW9uX3R5cGUsICAgICAgICAgICAgICAtLSBORVcgLyBSRVBMQUNFTUVOVCAvIFNVUFBMRU1FTlQKICAgICAgICAgIHN1cGVyc2VkZXNfZG9jX2lkLCBzdXBlcnNlZGVkX2J5LCBwYXJlbnRfZG9jX2lkLAogICAgICAgICAgZG9jX3N0YXR1cykgICAgICAgICAgICAgICAgIC0tIEFDVElWRSAvIFNVUEVSU0VERUQgLyBSRVZFUlRFRAotLSDnoaznuqbmnZ/vvJoKLS0gICBVTklRVUUoc3BhY2VfaWQsIGZpbGVfaGFzaCkgICAgICAgICAgICAgICAgICAgIC0tIOWOu+mHjQotLSAgIFVOSVFVRShzcGFjZV9pZCwgdmVyc2lvbl9rZXkpIFdIRVJFIGlzX2xhdGVzdCAgIC0tIOeJiOacrOWUr+S4gAoKLS0g5YiH54mH77ya5qOA57Si5Y2V5YWD77yM5bim56ug6IqC5rqv5rqQCmRvY3VtZW50X2NodW5rcyhjaHVua19pZCwgZG9jX2lkLCBzcGFjZV9pZCwgY2F0ZWdvcnksCiAgICAgICAgICAgICAgICBzZWN0aW9uX3BhdGgsIHBhZ2VfbnVtYmVyLCBjb250ZW50KQotLSDms6jvvJplbWJlZGRpbmcg5YiX6aKE55WZ77yM5Yid5pyf5LiN5LiK5ZCR6YePCgotLSDlhaXlupPku7vliqHvvJrluYLnrYnnirbmgIHmnLoKaW5nZXN0aW9uX3Rhc2tzKHRhc2tfaWQsIGlkZW1wb3RlbmN5X2tleSBVTklRVUUsIHVzZXJfaWQsCiAgICAgICAgICAgICAgICB0YXJnZXRfc3BhY2VfaWQsIHRhc2tfc3RhdHVzLCByZXZpZXdfcmVhc29uLAogICAgICAgICAgICAgICAgcmV0cnlfY291bnQsIGF1ZGl0X3BheWxvYWQgSlNPTkIpCi0tIHRhc2tfc3RhdHVzOiBSRUNFSVZFRCDihpIgUFJFQ0hFQ0tJTkcg4oaSIFJPVVRJTkcKLS0gICAgICAgICAgICDihpIgU1RBR0VEIOKGkiBDT01NSVRUSU5HIOKGkiBDT01NSVRURUQKLS0gICAgICAgICAgICDihpIgTkVFRFNfUkVWSUVXIC8gRkFJTEVEX1JFVFJZQUJMRSAvIEZBSUxFRF9GSU5BTCAvIENBTkNFTExFRAoKLS0g5YGl5bq35oyH5qCH77yIUGhhc2UgMu+8iQpoZWFsdGhfbWV0cmljcyhtZXRyaWNfaWQsIHNvdXJjZV9kb2NfaWQsIHBlcnNvbl9uYW1lLCBtZXRyaWNfbmFtZSwKICAgICAgICAgICAgICAgbWV0cmljX3ZhbHVlLCB1bml0LCByZWZlcmVuY2VfcmFuZ2UsIGlzX2Fibm9ybWFsLAogICAgICAgICAgICAgICB2ZXJpZmljYXRpb25fc3RhdHVzKSAgLS0gQUlfRVhUUkFDVEVEIC8gTkVFRFNfQ0hFQ0sgLyBIVU1BTl9WRVJJRklFRAoKLS0g5a6h6K6h77yI5Y+q6L+95Yqg77yJCmF1ZGl0X2V2ZW50cyhldmVudF9pZCwgYWN0b3IsIGFjdGlvbiwgb2JqZWN0X3R5cGUsIG9iamVjdF9pZCwKICAgICAgICAgICAgIGJlZm9yZV9zdW1tYXJ5LCBhZnRlcl9zdW1tYXJ5LCBjcmVhdGVkX2F0KQpgYGAKCiMjIyBSTFMg6KaB54K577yIdjIuMiDnsr7pq5PvvIzkv53nlZnvvIkKCi0g5Lia5Yqh6KeS6ImyIGBjb250ZXh0aHViX2FwcGAg5Li6IGBOT0JZUEFTU1JMU2DvvJvmiYDmnInkuJrliqHooaggYEZPUkNFIFJPVyBMRVZFTCBTRUNVUklUWWAKLSDor7vlhpnnrZbnlaXliIbnprvvvJvnqbrmjojmnYPkuIrkuIvmlofpu5jorqTmi5Lnu53vvIhGYWlsLUNsb3NlZO+8iQotIOS4quS6uuepuumXtOWtkOebruW9leeUqCBgYWxsb3dlZF9wZXJzb25hbF9jYXRlZ29yaWVzYCDnmb3lkI3ljZXmjqfliLYKLSDnvZHlhbPlsYLmr4/mrKHor7fmsYLph43mlrDorqHnrpfmjojmnYPvvIzkuI3kv6Hku7vnvJPlrZjvvJtUb2tlbiDmkqTplIAgNSDnp5LlhoXnlJ/mlYjvvIhQaGFzZSAwIOWunua1i++8iQoKLS0tCgojIyA0LiDlhaXlupPmtYHmsLTnur/vvIhuOG4gV0YtMDHvvIkKCmBgYHRleHQKUkVDRUlWRUTvvIjluYLnrYnnmbvorrDvvJpTSEEtMjU2ICsgaWRlbXBvdGVuY3lfa2V577yJCiAg4oaSIFBSRUNIRUNLSU5H77yIVG9rZW4g5pyJ5pWI77yf55uu5qCH56m66Ze05Y+v5YaZ77yf5paH5Lu25Y+v6K+777yf5pWP5oSf6aKE5qOA77yJCiAg4oaSIFJPVVRJTkfvvIjmmL7lvI/nm67moIcgPiDnoa7lrprmgKfop4TliJkgPiBMTE0g6K+t5LmJ5YiG57G777yJCiAg4oaSIFNUQUdFRO+8iOe8luivkSBNYXJrZG93biDojYnnqL/liLDmmoLlrZjljLrvvIkKICDihpIgQ09NTUlUVElOR++8iFNhZ2HvvJrlhpkgREIg5LqL5YqhIOKGkiDljp/lrZDnp7vliqjmlofku7Yg4oaSIOabtOaWsOe0ouW8le+8iQogIOKGkiBDT01NSVRURUTvvIjlj6/mo4DntKLvvIkKCiAg5YiG5pSv77ya5b2S5bGe5LiN5piOIC8g6Leo6L6555WMIC8g5pWP5oSfIOKGkiBORUVEU19SRVZJRVfvvIjpmpTnprvljLrvvIzkurrlt6Xnoa7orqTvvIkKICDliIbmlK/vvJrkuLTml7bmlYXpmpwg4oaSIEZBSUxFRF9SRVRSWUFCTEXvvIjoh6rliqjph43or5XvvIkKICDliIbmlK/vvJrovpPlhaXkuI3lkIjop4Qg4oaSIEZBSUxFRF9GSU5BTApgYGAKCioq6Lev55Sx6ZOB5b6LKirvvJrop4TliJnkvJjlhYjkuo4gTExN77ybTExNIOWPque7meWAmemAiSvnkIbnlLHvvIzkuI3lgZrmnYPpmZDlhrPlrprjgIIKCi0tLQoKIyMgNS4gTGl2aW5nIExlZGdlciDlj7DotKbvvIjku44gdjIuMSDliqDlm57vvIkKCuaVtOaWh+aho+WFpeW6k+S5i+Wklu+8jOe7hueykuW6puS6i+Wunui1sOWPsOi0pu+8mgoKYGBgdGV4dAp3aWtpL19sZWRnZXJzL19saXZpbmdfbGVkZ2VyXzzkuLvpopg+Lm1kCmBgYAoKLSDlr7nor53kuK3nmoTnu5PorrrjgIFCdWcg5qC55Zug44CB5Yaz562W6K6w5b2VIOKGkiBgY29tbWl0X21lbW9yeV9ub3RlYCDov73liqAKLSDmr4/mnaHmnIkgYGV2ZW50X2lkYO+8jOW5guetiei/veWKoAotIOeUqOaIt+WcqCBPYnNpZGlhbiDmlLnlj7DotKYg4oaSIFdGLTA0IOWbnuWGmeaVsOaNruW6kwotIOavj+WRqCBMaW50IOajgOafpe+8mui/h+acn+mhueW9kuaho+OAgeWQjOS5iemhueWQiOW5tuW7uuiuru+8iOWPquW7uuiuruS4jeiHquWKqOaUue+8iQoKLS0tCgojIyA2LiBNQ1Ag5o6l5Y+j77yI5o6o5bm/6ZKp5a2Q77yMUGhhc2UgMSDlv4XlpIfvvIkKCnwg5bel5YW3IHwg55So6YCUIHwg5by65Yi26L+U5ZueIHwKfC0tLXwtLS18LS0tfAp8IGBzZWFyY2hfa25vd2xlZGdlYCB8IOa3t+WQiOajgOe0oiB8IOWIh+eJhyArIGDmnaXmupDvvJrjgIrmlofmoaPlkI0o54mI5pysKeOAiy0g56ug6IqC6Lev5b6E77yM56ysWOmhtWAgfAp8IGBnZXRfZG9jdW1lbnRfYXNzZXRgIHwg5YetIGRvY19pZCDlj5bljp/ku7Yv6ZmE5Lu2IHwgUkxTIOmJtOadg+WQjui/lOWbnu+8m+aLkue7neS4jeazhOmcsuWtmOWcqOaApyB8CnwgYGluZ2VzdF9kb2N1bWVudF9vcl9maWxlYCB8IOWFpeW6kyB8IOe7k+aehOWMluWbnuaJp+WNoe+8iOS7u+WKoUlEL+eKtuaAgS/ot6/lvoQv5pGY6KaBL+e6oOmUmeaMh+S7pO+8iSB8CnwgYGNvbW1pdF9tZW1vcnlfbm90ZWAgfCDlr7nor53msonmt4DliLDlj7DotKYgfCDlm57miacgKyDlj7DotKblv6vnhacgfAp8IGByZXZpZXdfYW5kX2ZpeF9rbm93bGVkZ2VgIHwg5om55YeGL+mHjeWIhuexuy/lm57mu5ov57qg6ZSZIHwg55m95ZCN5Y2V5Yqo5L2c77yM5Y+Y5pu05YmN5ZCOIERpZmYgfAp8IGBxdWVyeV9oZWFsdGhfdHJlbmRzYCB8IOWBpeW6t+aMh+agh+i2i+WKv++8iFBoYXNlIDLvvIkgfCDmjIfmoIfooaggKyDlj4LogIPojIPlm7QgKyDmoLjpqoznirbmgIEgfAoKKipJREUg57yW56CB5oSf55+lKirvvIh2Mi4xIEZSLTEx77yM5o+Q5YmN5YiwIFBoYXNlIDHvvInvvJpNQ1Ag5pq06Zyy5Luj56CB56ym5Y+35qOA57Si77yMQ3Vyc29yL0NsYXVkZSBDb2RlIOWGmeS7o+eggeaXtuiHquWKqOaLieWPluWFs+iBlOeahOaOpeWPo+inhOiMg+WSjCBBRFLjgILov5nmmK/pg6jpl6jmhL/mhI/or5XnlKjnmoTnkIbnlLHjgIIKCi0tLQoKIyMgNy4g5YiG6Zi25q616Lev57q/5Zu+Cgp8IOmYtuautSB8IOWRqOacnyB8IOS6pOS7mCB8IOmAgOWHuuagh+WHhiB8CnwtLS18LS0tfC0tLXwtLS18CnwgKipQaGFzZSAwKiogfCAzLTUg5aSpIHwgUEcgKyBSTFMgKyDnvZHlhbMgUG9D77ybNiDpobnotJ/lkJHlronlhajmtYvor5UgfCDlhajpg6jpgJrov4fvvJvlj4zlkJHlkIzmraXml6Dmrbvlvqrnjq8gfAp8ICoqUGhhc2UgMSoqIHwgMS41LTIg5ZGoIHwg5Liq5Lq656m66Ze06Zet546v77ya5YWl5bqTL+WIhuexuy/niYjmnKwv5qOA57SiL01DUC9JREUg5oSf55+l77ybTGl2aW5nIExlZGdlcu+8m09ic2lkaWFuIOaOp+WItuWPsCB8IOavj+Wkqeeos+WumuWFpeW6k++8m+eJiOacrOaXoOW5tuWPkeWPjOa/gOa0u++8m+W8leeUqCAxMDAlIOWPr+a6r+a6kCB8CnwgKipQaGFzZSAyKiogfCAyIOWRqCB8IOWutuW6reepuumXtCArIOWBpeW6t+aho+ahiO+8iFZMTSDmj5Dlj5YgKyDkurrlt6XlpI3moLjvvInvvJtXZWIgVUkgdjHvvJvmr4/lkaggTGludCB8IOWBpeW6t+aMh+aghyAxMDAlIOW8guW4uOinpuWPkeWkjeaguO+8m+WutuW6remalOemu+a1i+ivlemAmui/hyB8CnwgKipQaGFzZSAzKiogfCDmjInpnIAgfCDpg6jpl6jnu4Tnu4fmoJHvvJvlpJrmiJDlkZjvvJvlrqHorqHmiqXooaggfCDot6jovrnnlYzor6/lhbHkuqvnjofkuLogMCB8CgotLS0KCiMjIDguIOW8gOa6kOW3peeoi++8iOeOsOWcqOWwseWumu+8iQoKfCDpobkgfCDlhrPnrZYgfAp8LS0tfC0tLXwKfCBMaWNlbnNlIHwgKipBcGFjaGUtMi4wKiogfAp8IOS7k+W6kyB8IOWNleS7kyBtb25vcmVwb++8mmBnYXRld2F5L2AgYHdvcmtlci9gIGB3ZWIvYCBgZG9jcy9gIGBkZXBsb3kvYCB8Cnwg5L6d6LWW5a6h6K6hIHwgUGhhc2UgMCDmo4Dmn6UgbjhuIOetieS+nei1lueahOWNj+iuruWFvOWuueaApyB8Cnwg5paH5qGjIHwgUkVBRE1F77yINSDliIbpkp/kuIrmiYvvvIkrIEFSQ0hJVEVDVFVSRS5tZO+8iOacrOaWh+S7tu+8iSsgQ09OVFJJQlVUSU5HLm1kIHwKfCBOQVMg6YOo572yIHwgYGRlcGxveS9uYXMvZG9ja2VyLWNvbXBvc2UueW1sYO+8iFBHICsg572R5YWzICsgbjhu77yJ5Y2zIGRvZ2Zvb2Qg546v5aKDIHwKCi0tLQoKIyMgOS4g5LiOIHYyLjEvdjIuMiDnmoTlhbPns7sKCuacrOaWh+S7tuS4uuacgOe7iOS+neaNruOAgnYyLjIg55qE5a6J5YWo6K6+6K6h5YWo5paH6YeH57qz77ybdjIuMSDnmoQgTGl2aW5nIExlZGdlcuOAgW44biDlrp7ot7XjgIFxbWQg6L275qOA57Si6YeH57qz77yb5Lik5Lu95Lit5LiO5pys5paH5Lu25Yay56qB55qE77yM5Lul5pys5paH5Lu25Li65YeG44CCCgoq4oCU4oCUIDIwMjYtMTAtMjLvvIzln7rkuo7kuovlrp7nmoTni6znq4vor4TlrqHnu5PorrrjgIIqCg==
+# ContextHub 最终架构方案（合并版）
+
+> **版本：** v3.0（合并定稿）
+> **日期：** 2026-10-22
+> **来源：** v2.1（Gemini 起草）+ v2.2（ChatGPT 评审）逐项对比后的独立结论
+> **定位：** 开源项目；NAS 为自我实践环境；目标推广至部门使用
+> **许可证：** Apache-2.0（本阶段确定，不 deferred）
+
+---
+
+## 0. 评审结论：不站队，逐项取优
+
+| 维度 | 采用 | 理由 |
+|---|---|---|
+| 安全架构（RLS、fail-closed、GUC 认知） | v2.2 | 实质性差距，v2.1 只提了概念 |
+| n8n 定位 | v2.2 的原则 + v2.1 的实践 | 编排归 n8n，授权死守网关层；开源项目需要可视化工作流降低接手门槛 |
+| Living Ledger 台账 | v2.1 | v2.2 遗漏，细粒度知识沉淀的关键机制，必须加回 |
+| Phase 0 先验证再开发 | v2.2 | 工程纪律，不妥协 |
+| 检索策略 | v2.1 起步 → v2.2 目标 | 先 qmd 轻量本地搜索跑通，向量混合检索为优化项 |
+| 版本模型 | v2.2 表述 | 更干净，等价 |
+| 人看界面 | 新增判断 | Obsidian 留给个人深度用户；部门推广必须做 Web UI |
+| 推广钩子 | 新增判断 | MCP + IDE 编码感知进 Phase 1，不是 Phase 3 |
+
+---
+
+## 1. 架构原则（定稿）
+
+| ID | 原则 | 说明 |
+|---|---|---|
+| D-01 | 原始文件不可变 | 原始字节只读；SHA-256 用于去重与完整性校验 |
+| D-02 | Wiki Markdown 是知识正文载体 | 人可读、可编辑；Obsidian 直接打开 |
+| D-03 | 系统元数据由数据库管 | doc_id、空间、版本指针、任务状态只走受控写入；Frontmatter 对应字段是投影，不可手改生效 |
+| D-04 | 检索索引是派生数据 | 向量、全文、切片均可重建；不作为权限事实源 |
+| D-05 | 不确定路由进隔离 | 禁止自动跨边界共享；归属不明进 NEEDS_REVIEW |
+| D-06 | 版本唯一性 | 同一 `(space_id, version_key)` 下只有一个当前版本，数据库唯一约束保证 |
+| D-07 | 无跨系统原子事务 | 文件系统 + PostgreSQL 之间用 Saga（暂存→事务→发布→确认），可恢复、可审计 |
+| D-08 | 授权 = Token ∩ Membership ∩ 空间规则 ∩ 类别规则 | 缺任何一项即拒绝 |
+| D-09 | RLS 是纵深防御 | 不替代网关层授权；GUC 变量不是独立身份凭证 |
+| D-10 | 分期交付 | 先个人闭环（NAS 验证），再家庭健康，再部门推广；数据模型一次到位 |
+
+---
+
+## 2. 系统总体架构
+
+```text
+┌─ 客户端层 ─────────────────────────────────────────────┐
+│ IDE (MCP) │ Obsidian │ Web UI (Phase 2+) │ 飞书 Bot      │
+└──────────────────────┬─────────────────────────────────┘
+                       │ MCP / HTTPS；只传 doc_id，不传裸路径
+                       ▼
+┌─ 网关层 (FastAPI + FastMCP) ───────────────────────────┐
+│ Token 校验 → Membership 解析 → 参数校验 → 授权 → 审计   │
+│ 工具: search / ingest / commit / review / asset / health│
+└──────────┬────────────────────────────┬────────────────┘
+           │ 受控 SQL + RLS              │ 任务 ID
+           ▼                             ▼
+┌─ PostgreSQL 16 ──────────┐  ┌─ n8n / Worker ──────────┐
+│ 用户/空间/成员/Token      │  │ WF-01 入库状态机         │
+│ 文档/版本/任务/审计       │  │ WF-02 健康指标提取       │
+│ chunks/全文/(向量*)       │  │ WF-03 每周 Lint         │
+│ RLS 强制 + 最小权限角色   │  │ WF-04 Obsidian 回写     │
+└──────────┬───────────────┘  └──────────┬──────────────┘
+           └──────────────┬──────────────┘
+                          ▼
+┌─ 文件存储 (NAS) ───────────────────────────────────────┐
+│ raw/ (不可变原件) │ wiki/ (Markdown) │ _review/ (隔离区) │
+└──────────────────────────────────────────────────────┘
+```
+
+*向量索引为可选优化项，初期用 PostgreSQL 全文检索（FTS）+ qmd 本地搜索。*
+
+---
+
+## 3. 数据模型（核心表）
+
+```sql
+-- 空间：个人/家庭/组织统一抽象
+spaces(space_id, space_name, space_archetype, parent_space_id,
+       tree_path ltree, vault_rel_path, allowed_l1_folders TEXT[])
+
+-- 成员：谁在什么空间是什么角色
+space_memberships(user_id, space_id, role, revoked_at)
+-- role: READER / WRITER / ADMIN
+
+-- Token：场景化视图钥匙
+access_tokens(token_hash, user_id, profile_name,
+              allowed_personal_categories TEXT[],  -- Fail-Closed：空=拒绝
+              expires_at, revoked_at)
+
+-- 文档：版本链核心
+documents(doc_id, space_id, category, title,
+          file_hash, wiki_file_path,
+          version_key, version_label, is_latest,
+          relation_type,              -- NEW / REPLACEMENT / SUPPLEMENT
+          supersedes_doc_id, superseded_by, parent_doc_id,
+          doc_status)                 -- ACTIVE / SUPERSEDED / REVERTED
+-- 硬约束：
+--   UNIQUE(space_id, file_hash)                    -- 去重
+--   UNIQUE(space_id, version_key) WHERE is_latest   -- 版本唯一
+
+-- 切片：检索单元，带章节溯源
+document_chunks(chunk_id, doc_id, space_id, category,
+                section_path, page_number, content)
+-- 注：embedding 列预留，初期不上向量
+
+-- 入库任务：幂等状态机
+ingestion_tasks(task_id, idempotency_key UNIQUE, user_id,
+                target_space_id, task_status, review_reason,
+                retry_count, audit_payload JSONB)
+-- task_status: RECEIVED → PRECHECKING → ROUTING
+--            → STAGED → COMMITTING → COMMITTED
+--            → NEEDS_REVIEW / FAILED_RETRYABLE / FAILED_FINAL / CANCELLED
+
+-- 健康指标（Phase 2）
+health_metrics(metric_id, source_doc_id, person_name, metric_name,
+               metric_value, unit, reference_range, is_abnormal,
+               verification_status)  -- AI_EXTRACTED / NEEDS_CHECK / HUMAN_VERIFIED
+
+-- 审计（只追加）
+audit_events(event_id, actor, action, object_type, object_id,
+             before_summary, after_summary, created_at)
+```
+
+### RLS 要点（v2.2 精髓，保留）
+
+- 业务角色 `contexthub_app` 为 `NOBYPASSRLS`；所有业务表 `FORCE ROW LEVEL SECURITY`
+- 读写策略分离；空授权上下文默认拒绝（Fail-Closed）
+- 个人空间子目录用 `allowed_personal_categories` 白名单控制
+- 网关层每次请求重新计算授权，不信任缓存；Token 撤销 5 秒内生效（Phase 0 实测）
+
+---
+
+## 4. 入库流水线（n8n WF-01）
+
+```text
+RECEIVED（幂等登记：SHA-256 + idempotency_key）
+  → PRECHECKING（Token 有效？目标空间可写？文件可读？敏感预检）
+  → ROUTING（显式目标 > 确定性规则 > LLM 语义分类）
+  → STAGED（编译 Markdown 草稿到暂存区）
+  → COMMITTING（Saga：写 DB 事务 → 原子移动文件 → 更新索引）
+  → COMMITTED（可检索）
+
+  分支：归属不明 / 跨边界 / 敏感 → NEEDS_REVIEW（隔离区，人工确认）
+  分支：临时故障 → FAILED_RETRYABLE（自动重试）
+  分支：输入不合规 → FAILED_FINAL
+```
+
+**路由铁律**：规则优先于 LLM；LLM 只给候选+理由，不做权限决定。
+
+---
+
+## 5. Living Ledger 台账（从 v2.1 加回）
+
+整文档入库之外，细粒度事实走台账：
+
+```text
+wiki/_ledgers/_living_ledger_<主题>.md
+```
+
+- 对话中的结论、Bug 根因、决策记录 → `commit_memory_note` 追加
+- 每条有 `event_id`，幂等追加
+- 用户在 Obsidian 改台账 → WF-04 回写数据库
+- 每周 Lint 检查：过期项归档、同义项合并建议（只建议不自动改）
+
+---
+
+## 6. MCP 接口（推广钩子，Phase 1 必备）
+
+| 工具 | 用途 | 强制返回 |
+|---|---|---|
+| `search_knowledge` | 混合检索 | 切片 + `来源：《文档名(版本)》- 章节路径，第X页` |
+| `get_document_asset` | 凭 doc_id 取原件/附件 | RLS 鉴权后返回；拒绝不泄露存在性 |
+| `ingest_document_or_file` | 入库 | 结构化回执卡（任务ID/状态/路径/摘要/纠错指令） |
+| `commit_memory_note` | 对话沉淀到台账 | 回执 + 台账快照 |
+| `review_and_fix_knowledge` | 批准/重分类/回滚/纠错 | 白名单动作，变更前后 Diff |
+| `query_health_trends` | 健康指标趋势（Phase 2） | 指标表 + 参考范围 + 核验状态 |
+
+**IDE 编码感知**（v2.1 FR-11，提前到 Phase 1）：MCP 暴露代码符号检索，Cursor/Claude Code 写代码时自动拉取关联的接口规范和 ADR。这是部门愿意试用的理由。
+
+---
+
+## 7. 分阶段路线图
+
+| 阶段 | 周期 | 交付 | 退出标准 |
+|---|---|---|---|
+| **Phase 0** | 3-5 天 | PG + RLS + 网关 PoC；6 项负向安全测试 | 全部通过；双向同步无死循环 |
+| **Phase 1** | 1.5-2 周 | 个人空间闭环：入库/分类/版本/检索/MCP/IDE 感知；Living Ledger；Obsidian 控制台 | 每天稳定入库；版本无并发双激活；引用 100% 可溯源 |
+| **Phase 2** | 2 周 | 家庭空间 + 健康档案（VLM 提取 + 人工复核）；Web UI v1；每周 Lint | 健康指标 100% 异常触发复核；家庭隔离测试通过 |
+| **Phase 3** | 按需 | 部门组织树；多成员；审计报表 | 跨边界误共享率为 0 |
+
+---
+
+## 8. 开源工程（现在就定）
+
+| 项 | 决策 |
+|---|---|
+| License | **Apache-2.0** |
+| 仓库 | 单仓 monorepo：`gateway/` `worker/` `web/` `docs/` `deploy/` |
+| 依赖审计 | Phase 0 检查 n8n 等依赖的协议兼容性 |
+| 文档 | README（5 分钟上手）+ ARCHITECTURE.md（本文件）+ CONTRIBUTING.md |
+| NAS 部署 | `deploy/nas/docker-compose.yml`（PG + 网关 + n8n）即 dogfood 环境 |
+
+---
+
+## 9. 与 v2.1/v2.2 的关系
+
+本文件为最终依据。v2.2 的安全设计全文采纳；v2.1 的 Living Ledger、n8n 实践、qmd 轻检索采纳；两份中与本文件冲突的，以本文件为准。
+
+*—— 2026-10-22，基于事实的独立评审结论。*

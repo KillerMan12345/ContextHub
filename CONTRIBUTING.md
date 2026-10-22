@@ -1,1 +1,21 @@
-IyBDb250cmlidXRpbmcgdG8gQ29udGV4dEh1YgoKIyMg5Z+65pys6KaB5rGCCgotIOaJgOaciSBQUiDlv4XpobvpgJrov4cgUGhhc2UgMCDnmoQgNiDpobnotJ/lkJHlronlhajmtYvor5UKLSDmlbDmja7lupPlj5jmm7Tlv4XpobvpmYTluKYgUkxTIOetlueVpeWuoeafpQotIOS4reaWhyBpc3N1ZS9QUiDlnYflj6/vvIzku6PnoIHms6jph4rnlKjoi7HmlocKCiMjIOW8gOWPkea1geeoiwoKMS4gRm9yayDmnKzku5PlupMKMi4g5LuOIGBtYWluYCDliIcgZmVhdHVyZSDliIbmlK/vvJpgZmVhdHVyZS88566A55+t5o+P6L+wPmAKMy4g5pys5Zyw6LeRIGBkZXBsb3kvbmFzL2RvY2tlci1jb21wb3NlLnltbGAg6aqM6K+BCjQuIOaPkOS6pCBQUu+8jENJIOS8mui3keWuieWFqOa1i+ivleefqemYtQoKIyMg5a6J5YWo57qi57q/77yI5LiN5Y+v5aal5Y2P77yJCgotIOe9keWFs+WxguaYr+WUr+S4gOeahOaOiOadg+i+ueeVjO+8jG44bi9Xb3JrZXIg5LiN5b6X5YGa5p2D6ZmQ5Yik5patCi0g5a6i5oi356uv5Y+q5LygIGBkb2NfaWRg77yM5LiN5Lyg5paH5Lu26Lev5b6ECi0g56m65o6I5p2D5LiK5LiL5paH6buY6K6k5ouS57ud77yIRmFpbC1DbG9zZWTvvIkKLSBUb2tlbiDkuI3lvpflh7rnjrDlnKjml6Xlv5fjgIHplJnor6/kv6Hmga/jgIHku7vliqHlm57miafkuK0K
+# Contributing to ContextHub
+
+## 基本要求
+
+- 所有 PR 必须通过 Phase 0 的 6 项负向安全测试
+- 数据库变更必须附带 RLS 策略审查
+- 中文 issue/PR 均可，代码注释用英文
+
+## 开发流程
+
+1. Fork 本仓库
+2. 从 `main` 切 feature 分支：`feature/<简短描述>`
+3. 本地跑 `deploy/nas/docker-compose.yml` 验证
+4. 提交 PR，CI 会跑安全测试矩阵
+
+## 安全红线（不可妥协）
+
+- 网关层是唯一的授权边界，n8n/Worker 不得做权限判断
+- 客户端只传 `doc_id`，不传文件路径
+- 空授权上下文默认拒绝（Fail-Closed）
+- Token 不得出现在日志、错误信息、任务回执中

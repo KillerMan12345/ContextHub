@@ -1,1 +1,56 @@
-IyBDb250ZXh0SHViCgpBSS1uYXRpdmUgYXVkaXRhYmxlIGtub3dsZWRnZSBodWI6IGNvbXBpbGUgc2NhdHRlcmVkIGRvY3VtZW50cyBpbnRvIHZlcnNpb25lZCwgc291cmNlLXRyYWNlZCwgcGVybWlzc2lvbi1hd2FyZSBrbm93bGVkZ2UuCgo+IOS4quS6uiBOQVMg6Ieq5oiR5a6e6Le1IOKGkiDpg6jpl6jmjqjlub/nmoTlvIDmupDpobnnm67jgIIKCiMjIDUg5YiG6ZKf5LiK5omLCgpgYGBiYXNoCmdpdCBjbG9uZSBodHRwczovL2dpdGh1Yi5jb20vS2lsbGVyTWFuMTIzNDUvQ29udGV4dEh1Yi5naXQKY2QgQ29udGV4dEh1YgojIFBoYXNlIDAg6L+b6KGM5Lit77yM5a6M5pW06YOo572y5oyH5Y2X6KeBIGRlcGxveS9uYXMvCmBgYAoKIyMg6L+Z5piv5LuA5LmICgrmiorkvaDkuKLov5vmnaXnmoTmlofmoaPvvIhQREbjgIFXb3Jk44CB5Zu+54mH44CB6IGK5aSp6K6w5b2V77yJ6Ieq5Yqo5Y+Y5oiQKirmnInmnaXmupDjgIHmnInniYjmnKzjgIHmnInmnYPpmZAqKueahOefpeivhuW6k++8mgoKLSAqKuiHquWKqOW9kuexuyoq77ya5Lii6L+b5Y675bCx6KGM77yM57O757uf5Yik5pat5pS+5ZOq77yb6YeN5aSN55qE6Ieq5Yqo5Y676YeN77yM5paw54mI55qE6ZO+5Yiw5pen54mICi0gKirmnaXmupDlj6/muq8qKu+8muavj+adoeefpeivhumDveiDveeCueWbnuWOn+S7tueahOesrOWHoOeroOesrOWHoOmhtQotICoq5p2D6ZmQ6ZqU56a7KirvvJrlt6XkvZzjgIHlrrbluq3jgIHlgaXlurfmoaPmoYjniannkIbpmpTnprvvvIzkuI3kvJrkuLLlj7AKLSAqKuS7u+aEjyBBZ2VudCDlj6/mn6UqKu+8muagh+WHhiBNQ1Ag5o6l5Y+j77yMQ2xhdWRlIENvZGXjgIFDdXJzb3LjgIHpo57kuaYgQm90IOmDveiDveaOpQoKIyMg5p625p6ECgror6bop4EgW0FSQ0hJVEVDVFVSRS5tZF0oLi9BUkNISVRFQ1RVUkUubWQp44CC5LiA5Y+l6K+d77yaCgpgYGAK5L2g5Lii5paH5qGjIOKGkiDnvZHlhbMo5o6I5p2DKSDihpIg5YWl5bqT5rWB5rC057q/IOKGkiBQb3N0Z3JlU1FMICsgTWFya2Rvd24gV2lraSDihpIgTUNQIOWvueWklgpgYGAKCuiuvuiuoeWOn+WIme+8mioq5YWI5Y+v5L+h44CB5ZCO6Ieq5Yqo77yb57uf5LiA5bqV5bqn44CB5YiG5pyf5Lqk5LuY77yb5p2D6ZmQ5YWI5LqO5qOA57SiKirjgIIKCiMjIOebruW9lee7k+aehAoKYGBgCmdhdGV3YXkvICAgIEZhc3RBUEkgKyBGYXN0TUNQIOadg+mZkOe9keWFs++8iOWUr+S4gOWvueWkluWFpeWPo++8iQp3b3JrZXIvICAgICBuOG4g5bel5L2c5rWB77ya5YWl5bqT54q25oCB5py644CB5YGl5bq35o+Q5Y+W44CB5q+P5ZGoIExpbnQKd2ViLyAgICAgICAgV2ViIFVJ77yIUGhhc2UgMu+8jOmDqOmXqOaOqOW5v+eUqO+8iQpkb2NzLyAgICAgICDmlofmoaMKZGVwbG95LwogIG5hcy8gICAgICBOQVMgRG9ja2VyIENvbXBvc2Ug6YOo572y77yIZG9nZm9vZCDnjq/looPvvIkKYGBgCgojIyDot6/nur/lm74KCnwg6Zi25q61IHwg5YaF5a65IHwg54q25oCBIHwKfC0tLXwtLS18LS0tfAp8IFBoYXNlIDAgfCBQb3N0Z3JlU1FMICsgUkxTICsg572R5YWzIFBvQ++8jDYg6aG55a6J5YWo5rWL6K+VIHwg8J+UqCDov5vooYzkuK0gfAp8IFBoYXNlIDEgfCDkuKrkurrpl63njq/vvJrlhaXlupMv54mI5pysL+ajgOe0oi9NQ1AvSURFIOaEn+efpSB8IPCfk4sg5b6F5byA5aeLIHwKfCBQaGFzZSAyIHwg5a625bqt56m66Ze0ICsg5YGl5bq35qGj5qGIICsgV2ViIFVJIHwg8J+TiyDlvoXlvIDlp4sgfAp8IFBoYXNlIDMgfCDpg6jpl6jnu4Tnu4fmoJHvvIjmjInpnIDvvIkgfCDwn5OLIOW+heW8gOWniyB8CgojIyBMaWNlbnNlCgpBcGFjaGUtMi4wCg==
+# ContextHub
+
+AI-native auditable knowledge hub: compile scattered documents into versioned, source-traced, permission-aware knowledge.
+
+> 个人 NAS 自我实践 → 部门推广的开源项目。
+
+## 5 分钟上手
+
+```bash
+git clone https://github.com/KillerMan12345/ContextHub.git
+cd ContextHub
+# Phase 0 进行中，完整部署指南见 deploy/nas/
+```
+
+## 这是什么
+
+把你丢进来的文档（PDF、Word、图片、聊天记录）自动变成**有来源、有版本、有权限**的知识库：
+
+- **自动归类**：丢进去就行，系统判断放哪；重复的自动去重，新版的链到旧版
+- **来源可溯**：每条知识都能点回原件的第几章第几页
+- **权限隔离**：工作、家庭、健康档案物理隔离，不会串台
+- **任意 Agent 可查**：标准 MCP 接口，Claude Code、Cursor、飞书 Bot 都能接
+
+## 架构
+
+详见 [ARCHITECTURE.md](./ARCHITECTURE.md)。一句话：
+
+```
+你丢文档 → 网关(授权) → 入库流水线 → PostgreSQL + Markdown Wiki → MCP 对外
+```
+
+设计原则：**先可信、后自动；统一底座、分期交付；权限先于检索**。
+
+## 目录结构
+
+```
+gateway/    FastAPI + FastMCP 权限网关（唯一对外入口）
+worker/     n8n 工作流：入库状态机、健康提取、每周 Lint
+web/        Web UI（Phase 2，部门推广用）
+docs/       文档
+deploy/
+  nas/      NAS Docker Compose 部署（dogfood 环境）
+```
+
+## 路线图
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| Phase 0 | PostgreSQL + RLS + 网关 PoC，6 项安全测试 | 🔨 进行中 |
+| Phase 1 | 个人闭环：入库/版本/检索/MCP/IDE 感知 | 📋 待开始 |
+| Phase 2 | 家庭空间 + 健康档案 + Web UI | 📋 待开始 |
+| Phase 3 | 部门组织树（按需） | 📋 待开始 |
+
+## License
+
+Apache-2.0

@@ -1,1 +1,3 @@
-IyBnYXRld2F5CgpGYXN0QVBJICsgRmFzdE1DUCDmnYPpmZDnvZHlhbPjgILllK/kuIDlr7nlpJblhaXlj6PvvIzotJ/otKMgVG9rZW4g5qCh6aqM44CB5o6I5p2D6K6h566X44CB5a6h6K6h44CCCg==
+# gateway
+
+FastAPI + FastMCP 权限网关。唯一对外入口，负责 Token 校验、授权计算、审计。

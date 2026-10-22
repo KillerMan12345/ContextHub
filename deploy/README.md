@@ -1,1 +1,3 @@
-IyBkZXBsb3kKCumDqOe9sumFjee9ruOAggo=
+# deploy
+
+部署配置。
