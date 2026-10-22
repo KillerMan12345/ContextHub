@@ -87,16 +87,37 @@ async def search_knowledge(req: SearchRequest, authorization: str = Header("")):
         raise HTTPException(403, str(e))
 
 
-def route_category(file_name: str, instruction: str | None) -> tuple[str, str]:
-    """规则优先路由。返回 (category, rule_id)。"""
+def route_category(file_name: str, instruction: str | None) -> tuple[str, str, float]:
+    """
+    规则优先路由。返回 (category, rule_id, confidence)。
+    confidence < 0.5 → 进 _review 隔离，待人工确认。
+    """
     text = (file_name + " " + (instruction or "")).lower()
+
+    # 用户明确指定 → 高置信度
+    if instruction and any(k in instruction for k in
+                           ["工作", "生活", "家庭", "健康"]):
+        if "健康" in instruction:
+            return "04_Health_Archive", "R-01-explicit", 1.0
+        if "家庭" in instruction:
+            return "03_Family", "R-02-explicit", 1.0
+        if "生活" in instruction:
+            return "02_Life", "R-03-explicit", 1.0
+        return "01_Work", "R-00-explicit", 1.0
+
     if any(k in text for k in ["体检", "血压", "血糖", "医院", "医生", "处方", "化验", "健康"]):
-        return "04_Health_Archive", "R-01"
+        return "04_Health_Archive", "R-01", 0.9
     if any(k in text for k in ["家庭", "孩子", "女儿", "父母", "生日", "派对"]):
-        return "03_Family", "R-02"
+        return "03_Family", "R-02", 0.9
     if any(k in text for k in ["生活", "购物", "旅游", "美食", "电影"]):
-        return "02_Life", "R-03"
-    return "01_Work", "R-00-default"
+        return "02_Life", "R-03", 0.9
+    # 工作类关键词 → 中置信度
+    if any(k in text for k in ["工作", "项目", "会议", "报告", "文档", "需求",
+                                "设计", "开发", "测试", "接口", "api", "jwt",
+                                "配置", "教程", "手册", "指南", "规范"]):
+        return "01_Work", "R-00-work", 0.7
+    # 完全无法判断 → 低置信度，进隔离
+    return "01_Work", "R-00-uncertain", 0.3
 
 
 class IngestRequest(BaseModel):
@@ -129,7 +150,8 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 }
 
             # 2. 路由
-            category, rule_id = route_category(req.file_name, req.user_instruction)
+            category, rule_id, confidence = route_category(
+                req.file_name, req.user_instruction)
             space_id = (
                 req.target_space_id
                 if req.target_space_id != "AUTO"
@@ -535,7 +557,10 @@ async def ingest_file(
                 }
 
             # 3. 路由
-            category, rule_id = route_category(title, user_instruction)
+            category, rule_id, confidence = route_category(
+                title, user_instruction)
+            # 低置信度 → 进 _review 隔离
+            needs_review = confidence < 0.5
             space_id = (target_space_id
                         if target_space_id != "AUTO"
                         else "space_personal_u1")
@@ -554,11 +579,29 @@ async def ingest_file(
                     version_key, version_label, is_latest,
                     doc_status, created_by)
                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE,
-                           'ACTIVE', $10)""",
+                           $10, $11)""",
                 doc_id, space_id, category, title,
                 file_hash, wiki_path, raw_rel,
-                version_key, version_label, user_id,
+                version_key, version_label,
+                'NEEDS_REVIEW' if needs_review else 'ACTIVE',
+                user_id,
             )
+            # 低置信度 → 写 review_reason + 隔离文件
+            if needs_review:
+                reason = (f"路由置信度 {confidence:.2f} < 0.5 "
+                          f"(rule={rule_id})，需人工确认分类")
+                await conn.execute(
+                    "UPDATE documents SET review_reason=$1 "
+                    "WHERE doc_id=$2",
+                    reason, doc_id,
+                )
+                review_rel = save_review_file(
+                    tmp_path, file.filename or title, reason)
+                ledger.log_review(
+                    doc_id=str(doc_id),
+                    action="AUTO_ISOLATED",
+                    reason=reason,
+                )
             # 处理版本替代
             superseded = await handle_version_chain(
                 conn, space_id, version_key, doc_id, title)
@@ -607,12 +650,15 @@ async def ingest_file(
 
             return {
                 "doc_id": str(doc_id),
-                "status": "COMMITTED",
+                "status": "NEEDS_REVIEW" if needs_review else "COMMITTED",
                 "category": category,
                 "rule": rule_id,
+                "confidence": confidence,
                 "chunks": len(chunks),
                 "chars": len(markdown),
                 "wiki_path": disk_path,
+                "message": ("已隔离到待审核，请在 Web UI 确认分类"
+                            if needs_review else "入库成功"),
             }
     except PermissionError as e:
         raise HTTPException(403, str(e))
