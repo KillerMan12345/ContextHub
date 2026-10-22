@@ -50,11 +50,13 @@ async def search_knowledge(req: SearchRequest, authorization: str = Header("")):
     assert pool is not None
     try:
         async with profiled_connection(pool, token) as (conn, user_id):
+            # 1. FTS 检索
             rows = await conn.fetch(
                 """
                 SELECT c.doc_id, c.doc_title, c.section_path, c.page_number,
                        left(c.content, 300) AS snippet,
-                       d.version_label, d.category
+                       d.version_label, d.category,
+                       1.0 AS score, 'fts' AS src
                 FROM document_chunks c
                 JOIN documents d ON c.doc_id = d.doc_id
                 WHERE c.is_latest = TRUE
@@ -64,6 +66,39 @@ async def search_knowledge(req: SearchRequest, authorization: str = Header("")):
                 req.query,
                 req.limit,
             )
+            # 2. 向量检索（如果有 embedding）
+            try:
+                from model_adapter import get_provider, TaskType
+                provider = get_provider()
+                if provider and provider.supports(TaskType.EMBED):
+                    qvec = await provider.embed(req.query)
+                    vec_rows = await conn.fetch(
+                        """
+                        SELECT c.doc_id, c.doc_title, c.section_path,
+                               c.page_number,
+                               left(c.content, 300) AS snippet,
+                               d.version_label, d.category,
+                               1 - (c.embedding <=> $1::vector) AS score,
+                               'vector' AS src
+                        FROM document_chunks c
+                        JOIN documents d ON c.doc_id = d.doc_id
+                        WHERE c.is_latest = TRUE
+                          AND c.embedding IS NOT NULL
+                        ORDER BY c.embedding <=> $1::vector
+                        LIMIT $2
+                        """,
+                        qvec, req.limit,
+                    )
+                    # 合并去重（按 doc_id+section）
+                    seen = {(r["doc_id"], r["section_path"]) for r in rows}
+                    for vr in vec_rows:
+                        key = (vr["doc_id"], vr["section_path"])
+                        if key not in seen and vr["score"] > 0.5:
+                            rows.append(vr)
+                            seen.add(key)
+            except Exception as e:
+                # 向量检索失败不影响 FTS
+                pass
             return {
                 "results": [
                     {
@@ -1058,5 +1093,121 @@ async def list_tasks(
                     for r in rows
                 ],
             }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+"""家庭成员管理 + Space 晋升（简化版）"""
+
+from pydantic import BaseModel
+
+
+class InviteRequest(BaseModel):
+    space_id: str
+    user_id: str
+    role: str  # READER / WRITER / ADMIN
+
+
+@app.post("/spaces/members/invite")
+async def invite_member(
+    req: InviteRequest,
+    authorization: str = Header(""),
+):
+    """邀请成员到空间。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    if req.role not in ("READER", "WRITER", "ADMIN"):
+        raise HTTPException(400, "role 必须是 READER/WRITER/ADMIN")
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            await conn.execute(
+                """INSERT INTO space_memberships
+                   (user_id, space_id, role)
+                   VALUES ($1, $2, $3)
+                   ON CONFLICT (user_id, space_id)
+                   DO UPDATE SET role=$3, revoked_at=NULL""",
+                req.user_id, req.space_id, req.role,
+            )
+            return {"space_id": req.space_id,
+                    "user_id": req.user_id,
+                    "role": req.role,
+                    "status": "INVITED"}
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+@app.post("/spaces/members/revoke")
+async def revoke_member(
+    space_id: str,
+    user_id: str,
+    authorization: str = Header(""),
+):
+    """撤销成员。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, _):
+            await conn.execute(
+                "UPDATE space_memberships SET revoked_at=NOW() "
+                "WHERE user_id=$1 AND space_id=$2",
+                user_id, space_id,
+            )
+            return {"status": "REVOKED"}
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+class PromoteRequest(BaseModel):
+    doc_id: str
+    target_space_id: str
+    reason: str = ""
+
+
+@app.post("/spaces/promote")
+async def promote_document(
+    req: PromoteRequest,
+    authorization: str = Header(""),
+):
+    """文档晋升：复制到目标空间（需目标空间写权限）。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            doc = await conn.fetchrow(
+                "SELECT * FROM documents WHERE doc_id=$1::uuid",
+                req.doc_id,
+            )
+            if not doc:
+                raise HTTPException(404, "文档不存在")
+            new_id = uuid.uuid4()
+            await conn.execute(
+                """INSERT INTO documents
+                   (doc_id, space_id, category, title, file_hash,
+                    wiki_file_path, raw_file_path, version_key,
+                    version_label, is_latest, doc_status, created_by,
+                    parent_doc_id, relation_type)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+                           TRUE, 'ACTIVE', $10, $11, 'SUPPLEMENT')""",
+                new_id, req.target_space_id, doc["category"],
+                doc["title"], doc["file_hash"],
+                doc["wiki_file_path"], doc["raw_file_path"],
+                doc["version_key"], doc["version_label"],
+                user_id, doc["doc_id"],
+            )
+            # 记录关系
+            await conn.execute(
+                """INSERT INTO document_relations
+                   (source_doc_id, target_doc_id, relation_type, created_by)
+                   VALUES ($1, $2, 'PROMOTED_FROM', $3)""",
+                doc["doc_id"], new_id, user_id,
+            )
+            return {"new_doc_id": str(new_id),
+                    "target_space": req.target_space_id,
+                    "status": "PROMOTED"}
     except PermissionError as e:
         raise HTTPException(403, str(e))

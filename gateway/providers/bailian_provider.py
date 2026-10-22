@@ -22,7 +22,8 @@ class BailianProvider(ModelProvider):
         return "bailian"
 
     def supports(self, task: TaskType) -> bool:
-        return task in (TaskType.CHAT, TaskType.VISION, TaskType.CLASSIFY)
+        return task in (TaskType.CHAT, TaskType.VISION, TaskType.CLASSIFY,
+                       TaskType.EMBED)
 
     def _headers(self) -> dict:
         return {"Authorization": f"Bearer {self.api_key}",
@@ -62,4 +63,15 @@ class BailianProvider(ModelProvider):
             return r.json()["choices"][0]["message"]["content"]
 
     async def embed(self, text: str) -> list[float]:
-        raise NotImplementedError("embedding 走本地 Ollama，不调百炼")
+        """百炼 text-embedding-v4，1024 维。"""
+        if not self.api_key:
+            raise RuntimeError("BAILIAN_API_KEY 未设置")
+        async with httpx.AsyncClient(timeout=60) as client:
+            r = await client.post(
+                f"{self.base_url}/embeddings",
+                headers=self._headers(),
+                json={"model": "text-embedding-v4",
+                      "input": text[:2048]},
+            )
+            r.raise_for_status()
+            return r.json()["data"][0]["embedding"]
