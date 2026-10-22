@@ -136,15 +136,18 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 else "space_personal_u1"  # Phase 1 简化
             )
 
-            # 3. 写库
+            # 3. 写库（含版本链）
             doc_id = uuid.uuid4()
             wiki_path = f"wiki/{category}/{req.file_name}"
+            version_key, version_label = extract_version_key(req.file_name)
             await conn.execute(
                 """
                 INSERT INTO documents
                     (doc_id, space_id, category, title, file_hash,
-                     wiki_file_path, created_by)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                     wiki_file_path, version_key, version_label,
+                     is_latest, doc_status, created_by)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE,
+                        'ACTIVE', $9)
                 """,
                 doc_id,
                 space_id,
@@ -152,8 +155,13 @@ async def ingest(req: IngestRequest, authorization: str = Header("")):
                 req.file_name,
                 file_hash,
                 wiki_path,
+                version_key,
+                version_label,
                 user_id,
             )
+            # 版本链：替代旧版本
+            superseded = await handle_version_chain(
+                conn, space_id, version_key, doc_id, req.file_name)
 
             # 4. 切片（Phase 1 简化：整篇一个 chunk）
             await conn.execute(
@@ -532,17 +540,36 @@ async def ingest_file(
                         if target_space_id != "AUTO"
                         else "space_personal_u1")
 
-            # 4. 写库
+            # 4. 写库（含版本链 + raw）
             doc_id = uuid.uuid4()
             wiki_path = f"wiki/{category}/{title}.md"
+            # 保存原始文件
+            raw_rel = save_raw_file(tmp_path, file_hash, file.filename or title)
+            # 版本链
+            version_key, version_label = extract_version_key(title)
             await conn.execute(
                 """INSERT INTO documents
                    (doc_id, space_id, category, title, file_hash,
-                    wiki_file_path, created_by)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+                    wiki_file_path, raw_file_path,
+                    version_key, version_label, is_latest,
+                    doc_status, created_by)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE,
+                           'ACTIVE', $10)""",
                 doc_id, space_id, category, title,
-                file_hash, wiki_path, user_id,
+                file_hash, wiki_path, raw_rel,
+                version_key, version_label, user_id,
             )
+            # 处理版本替代
+            superseded = await handle_version_chain(
+                conn, space_id, version_key, doc_id, title)
+            if superseded:
+                ledger.log_commit(
+                    topic=f"版本替代: {title}",
+                    content=f"新版本 {version_label or ''} 替代了 "
+                            f"《{superseded['title']}》({superseded['version_label'] or ''})",
+                    event_id=str(uuid.uuid4()),
+                    user_id=user_id,
+                )
 
             # 5. 切分入库
             chunks = parser.chunk_markdown(markdown)
@@ -592,3 +619,299 @@ async def ingest_file(
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
+"""v3.0 补全：raw 原件保存 + _review 隔离 + 版本链 + commit/review/asset HTTP 端点"""
+
+from fastapi import Header, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+import hashlib
+import uuid
+import os
+import shutil
+import re
+
+
+# ============ 版本链：从文件名提取 version_key ============
+
+def extract_version_key(file_name: str) -> tuple[str, str | None]:
+    """
+    从文件名提取版本标识。
+    返回 (version_key, version_label)。
+    如 "接入文档 v1.3.md" → ("接入文档", "v1.3")
+    无版本号 → (文件名去后缀, None)
+    """
+    base = os.path.splitext(os.path.basename(file_name))[0]
+    # 匹配 v1.3 / V2.0 / 版本1.2 / 1.3版 等
+    m = re.search(r'[vV]?\d+\.\d+', base)
+    if m:
+        ver = m.group(0)
+        if not ver.lower().startswith('v'):
+            ver = 'v' + ver
+        key = re.sub(r'\s*[vV]?\d+\.\d+\s*', '', base).strip()
+        # 清理括号备注
+        key = re.sub(r'[（(].*[）)]', '', key).strip()
+        return key or base, ver
+    return base, None
+
+
+async def handle_version_chain(conn, space_id: str, version_key: str,
+                                new_doc_id: uuid.UUID, new_title: str):
+    """
+    版本链处理：
+    - 同一 (space_id, version_key) 下，把旧的 is_latest=0, doc_status='SUPERSEDED'
+    - 新文档 supersedes_doc_id 指向旧文档
+    返回被替代的旧文档信息（或 None）
+    """
+    old = await conn.fetchrow(
+        """SELECT doc_id, title, version_label FROM documents
+           WHERE space_id = $1 AND version_key = $2 AND is_latest = TRUE
+           LIMIT 1""",
+        space_id, version_key,
+    )
+    if old:
+        await conn.execute(
+            """UPDATE documents SET is_latest = FALSE,
+               doc_status = 'SUPERSEDED',
+               superseded_by = $1,
+               updated_at = NOW()
+               WHERE doc_id = $2""",
+            new_doc_id, old["doc_id"],
+        )
+        await conn.execute(
+            """UPDATE documents SET supersedes_doc_id = $1,
+               relation_type = 'REPLACEMENT'
+               WHERE doc_id = $2""",
+            old["doc_id"], new_doc_id,
+        )
+        return {"doc_id": str(old["doc_id"]), "title": old["title"],
+                "version_label": old["version_label"]}
+    return None
+
+
+# ============ raw 原件保存 ============
+
+def save_raw_file(tmp_path: str, file_hash: str, file_name: str) -> str:
+    """
+    保存原始文件到 /data/raw/{hash前2位}/{hash}{后缀}。
+    不可变：已存在则不覆盖。
+    返回 raw 相对路径。
+    """
+    ext = os.path.splitext(file_name)[1]
+    rel = f"raw/{file_hash[:2]}/{file_hash}{ext}"
+    full = f"/data/{rel}"
+    if not os.path.exists(full):
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        shutil.copy2(tmp_path, full)
+    return rel
+
+
+# ============ _review 隔离 ============
+
+def save_review_file(tmp_path: str, file_name: str, reason: str) -> str:
+    """保存到 /data/_review/，返回相对路径。"""
+    safe = re.sub(r'[^\w\-_.()（） ]', '_', file_name)
+    rel = f"_review/{safe}"
+    full = f"/data/{rel}"
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    shutil.copy2(tmp_path, full)
+    # 写原因文件
+    with open(full + ".reason.txt", "w", encoding="utf-8") as f:
+        f.write(f"隔离原因: {reason}\n")
+    return rel
+
+
+# ============ HTTP 端点：commit (台账) ============
+
+class CommitNoteRequest(BaseModel):
+    topic: str
+    content: str
+    event_id: str | None = None
+
+
+@app.post("/commit")
+async def commit_note(
+    req: CommitNoteRequest,
+    authorization: str = Header(""),
+):
+    """对话沉淀到 Living Ledger 台账。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            eid = req.event_id or str(uuid.uuid4())
+            ledger.log_commit(
+                topic=req.topic,
+                content=req.content,
+                event_id=eid,
+                user_id=user_id,
+            )
+            return {"event_id": eid, "status": "COMMITTED"}
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+# ============ HTTP 端点：review (审核) ============
+
+class ReviewRequest(BaseModel):
+    doc_id: str
+    action: str  # APPROVE / RECLASSIFY / ROLLBACK
+    new_category: str | None = None
+    reason: str | None = None
+
+
+@app.post("/review")
+async def review_document(
+    req: ReviewRequest,
+    authorization: str = Header(""),
+):
+    """审核文档：批准入库 / 重分类 / 回滚版本。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            doc = await conn.fetchrow(
+                "SELECT * FROM documents WHERE doc_id = $1::uuid",
+                req.doc_id,
+            )
+            if not doc:
+                raise HTTPException(404, "文档不存在")
+
+            if req.action == "APPROVE":
+                # 从 _review 移到正式位置
+                await conn.execute(
+                    "UPDATE documents SET doc_status='ACTIVE' "
+                    "WHERE doc_id=$1::uuid",
+                    req.doc_id,
+                )
+                ledger.log_review(
+                    doc_id=req.doc_id,
+                    action="APPROVE",
+                    reason=req.reason or "",
+                )
+                return {"doc_id": req.doc_id, "status": "APPROVED"}
+
+            elif req.action == "RECLASSIFY":
+                if not req.new_category:
+                    raise HTTPException(400, "RECLASSIFY 需要 new_category")
+                await conn.execute(
+                    "UPDATE documents SET category=$1, doc_status='ACTIVE' "
+                    "WHERE doc_id=$2::uuid",
+                    req.new_category, req.doc_id,
+                )
+                await conn.execute(
+                    "UPDATE document_chunks SET category=$1 "
+                    "WHERE doc_id=$2::uuid",
+                    req.new_category, req.doc_id,
+                )
+                ledger.log_review(
+                    doc_id=req.doc_id,
+                    action=f"RECLASSIFY → {req.new_category}",
+                    reason=req.reason or "",
+                )
+                return {"doc_id": req.doc_id, "status": "RECLASSIFIED",
+                        "new_category": req.new_category}
+
+            elif req.action == "ROLLBACK":
+                # 回滚到上一个版本
+                prev_id = doc["supersedes_doc_id"]
+                if not prev_id:
+                    raise HTTPException(400, "没有可回滚的上一个版本")
+                await conn.execute(
+                    "UPDATE documents SET is_latest=FALSE, "
+                    "doc_status='REVERTED' WHERE doc_id=$1::uuid",
+                    req.doc_id,
+                )
+                await conn.execute(
+                    "UPDATE documents SET is_latest=TRUE, "
+                    "doc_status='ACTIVE', superseded_by=NULL "
+                    "WHERE doc_id=$1::uuid",
+                    prev_id,
+                )
+                ledger.log_review(
+                    doc_id=req.doc_id,
+                    action=f"ROLLBACK → {prev_id}",
+                    reason=req.reason or "",
+                )
+                return {"doc_id": req.doc_id, "status": "ROLLED_BACK",
+                        "restored": str(prev_id)}
+            else:
+                raise HTTPException(400, f"未知动作: {req.action}")
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+# ============ HTTP 端点：asset (取原件) ============
+
+@app.get("/asset/{doc_id}")
+async def get_asset(
+    doc_id: str,
+    authorization: str = Header(""),
+):
+    """凭 doc_id 取原始文件（RLS 鉴权）。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            doc = await conn.fetchrow(
+                "SELECT title, raw_file_path FROM documents "
+                "WHERE doc_id = $1::uuid",
+                doc_id,
+            )
+            if not doc:
+                # 不泄露存在性
+                raise HTTPException(404, "Not found")
+            raw_path = doc["raw_file_path"]
+            if not raw_path or not os.path.exists(f"/data/{raw_path}"):
+                raise HTTPException(404, "原件不存在")
+            from fastapi.responses import FileResponse
+            return FileResponse(
+                f"/data/{raw_path}",
+                filename=doc["title"],
+            )
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+
+
+# ============ HTTP 端点：inbox (待审核列表) ============
+
+@app.get("/inbox")
+async def list_inbox(
+    authorization: str = Header(""),
+):
+    """列出 NEEDS_REVIEW 状态的文档（待审核收件箱）。"""
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            rows = await conn.fetch(
+                """SELECT doc_id, title, category, space_id,
+                          created_at, review_reason
+                   FROM documents
+                   WHERE doc_status = 'NEEDS_REVIEW'
+                   ORDER BY created_at DESC
+                   LIMIT 50""",
+            )
+            return {
+                "count": len(rows),
+                "items": [
+                    {
+                        "doc_id": str(r["doc_id"]),
+                        "title": r["title"],
+                        "category": r["category"],
+                        "space_id": r["space_id"],
+                        "created_at": r["created_at"].isoformat(),
+                        "reason": r.get("review_reason", ""),
+                    }
+                    for r in rows
+                ],
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))

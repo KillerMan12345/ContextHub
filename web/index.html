@@ -56,6 +56,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
     <button class="tab" onclick="showTab('upload')">📄 文件</button>
     <button class="tab" onclick="showTab('health')">❤️ 健康</button>
     <button class="tab" onclick="showTab('ledger')">📋 台账</button>
+    <button class="tab" onclick="showTab('inbox')">📥 待审核</button>
   </div>
 
   <div id="panel-search" class="panel active">
@@ -241,5 +242,50 @@ async function loadLedger() {
   document.getElementById('ledger-content').textContent = d.recent || '无';
 }
 </script>
+<div id="panel-inbox" class="panel">
+  <button class="btn" onclick="loadInbox()">刷新待审核</button>
+  <div id="inbox-list" style="margin-top:12px"></div>
+</div>
+<script>
+async function loadInbox() {
+  const r = await fetch(API + '/inbox', {
+    headers: { 'Authorization': 'Bearer ' + token() }
+  });
+  const d = await r.json();
+  const el = document.getElementById('inbox-list');
+  if (!d.items || d.items.length === 0) {
+    el.innerHTML = '<div class="cite">暂无待审核文档</div>';
+    return;
+  }
+  el.innerHTML = d.items.map(it =>
+    '<div class="cite" style="margin-bottom:8px">' +
+    '<b>' + it.title + '</b><br>' +
+    '分类: ' + it.category + ' | 原因: ' + (it.reason || '未指定') + '<br>' +
+    '<button class="btn" style="margin:4px 4px 0 0" onclick="reviewDoc(\'' +
+      it.doc_id + '\',\'APPROVE\')">批准</button>' +
+    '<button class="btn" style="margin:4px 0 0 0" onclick="reclassifyDoc(\'' +
+      it.doc_id + '\')">重分类</button>' +
+    '</div>'
+  ).join('');
+}
+async function reviewDoc(doc_id, action, new_category) {
+  const body = { doc_id, action };
+  if (new_category) body.new_category = new_category;
+  const r = await fetch(API + '/review', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token(),
+               'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  alert(d.status || JSON.stringify(d));
+  loadInbox();
+}
+async function reclassifyDoc(doc_id) {
+  const cat = prompt('新分类 (01_Work/02_Life/03_Family/04_Health_Archive):');
+  if (cat) reviewDoc(doc_id, 'RECLASSIFY', cat);
+}
+</script>
+
 </body>
 </html>
