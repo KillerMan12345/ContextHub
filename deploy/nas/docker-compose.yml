@@ -1,5 +1,6 @@
-# ContextHub Phase 1 - n8n 工作流引擎
-# 与 PostgreSQL 同一 compose 文件，共享网络
+# ContextHub Phase 1 - NAS Dogfood Environment
+# PostgreSQL 16 + pgvector + n8n + Gateway
+# Usage: docker compose up -d
 
 services:
   postgres:
@@ -48,12 +49,28 @@ services:
       - GENERIC_TIMEZONE=Asia/Shanghai
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./n8n-workflows:/home/node/workflows:ro
     ports:
       - "127.0.0.1:5679:5678"  # NAS 上 5678 被占用
     networks:
       - contexthub-net
     command: start
+
+  gateway:
+    image: contexthub-gateway:phase1
+    container_name: contexthub-gateway
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://contexthub_app:change_me_in_env@postgres:5432/contexthub
+      - LEDGER_PATH=/data/living-ledger.md
+    volumes:
+      - /volume1/docker/contexthub/data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - contexthub-net
 
 volumes:
   pgdata:
