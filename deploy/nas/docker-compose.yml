@@ -1,6 +1,5 @@
-# ContextHub Phase 0 - NAS Dogfood Environment
-# PostgreSQL 16 + pgvector + (gateway placeholder)
-# Usage: docker compose up -d
+# ContextHub Phase 1 - n8n 工作流引擎
+# 与 PostgreSQL 同一 compose 文件，共享网络
 
 services:
   postgres:
@@ -14,9 +13,8 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./initdb:/docker-entrypoint-initdb.d:ro
     ports:
-      - "127.0.0.1:5432:5432"  # 仅本机，NAS 内网访问走 Tailscale
+      - "127.0.0.1:5435:5432"  # NAS 上 5432/5433 被占用
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U contexthub_migrator -d contexthub"]
       interval: 10s
@@ -25,23 +23,42 @@ services:
     networks:
       - contexthub-net
 
-  # Phase 0: 网关占位，Phase 1 实现
-  # gateway:
-  #   build: ../../gateway
-  #   container_name: contexthub-gateway
-  #   restart: unless-stopped
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   environment:
-  #     DATABASE_URL: postgresql://contexthub_app:${PG_APP_PASSWORD}@postgres:5432/contexthub
-  #   ports:
-  #     - "127.0.0.1:8000:8000"
-  #   networks:
-  #     - contexthub-net
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: contexthub-n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-change_me_in_env}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD:-change_me_in_env}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change_me_32_chars_min_xxxxxxxx}
+      - WEBHOOK_URL=http://localhost:5679/
+      - GENERIC_TIMEZONE=Asia/Shanghai
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n-workflows:/home/node/workflows:ro
+    ports:
+      - "127.0.0.1:5679:5678"  # NAS 上 5678 被占用
+    networks:
+      - contexthub-net
+    command: start
 
 volumes:
   pgdata:
+    driver: local
+  n8n_data:
     driver: local
 
 networks:
