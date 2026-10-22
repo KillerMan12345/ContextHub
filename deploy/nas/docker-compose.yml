@@ -1,4 +1,4 @@
-# ContextHub Phase 1 - NAS Dogfood Environment
+# ContextHub Phase 2 - NAS Dogfood Environment
 # PostgreSQL 16 + pgvector + n8n + Gateway
 # Usage: docker compose up -d
 
@@ -15,7 +15,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5435:5432"  # NAS 上 5432/5433 被占用
+      - "5435:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U contexthub_migrator -d contexthub"]
       interval: 10s
@@ -37,20 +37,20 @@ services:
       - N8N_PROTOCOL=http
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-change_me_in_env}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-chctx_n8n_admin_2026}
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_PORT=5432
       - DB_POSTGRESDB_DATABASE=n8n
       - DB_POSTGRESDB_USER=n8n
-      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD:-change_me_in_env}
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change_me_32_chars_min_xxxxxxxx}
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD:-chctx_n8n_2026}
+      - N8N_ENCRYPTION_KEY=chctx_n8n_encryption_key_2026_fixed_32chars
       - WEBHOOK_URL=http://localhost:5679/
       - GENERIC_TIMEZONE=Asia/Shanghai
     volumes:
       - n8n_data:/home/node/.n8n
     ports:
-      - "127.0.0.1:5679:5678"  # NAS 上 5678 被占用
+      - "5679:5678"
     networks:
       - contexthub-net
     command: start
@@ -65,6 +65,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://contexthub_app:change_me_in_env@postgres:5432/contexthub
       - LEDGER_PATH=/data/living-ledger.md
+      - WEB_DIR=/app/web
     volumes:
       - /volume1/docker/contexthub/data:/data
     ports:
