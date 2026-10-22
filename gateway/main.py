@@ -197,3 +197,179 @@ async def get_ledger(authorization: str = Header(""), n: int = 20):
     if not token:
         raise HTTPException(401, "Missing token")
     return {"recent": ledger.recent(n)}
+
+
+# ===== /ask：检索 → 权限过滤 → LLM 组织答案 =====
+class AskRequest(BaseModel):
+    question: str
+    limit: int = 5
+
+
+@app.post("/ask")
+async def ask_question(req: AskRequest, authorization: str = Header("")):
+    """
+    实时检索链路（对应架构图）：
+    PostgreSQL 检索 → RLS 权限过滤 → LLM 组织答案（带引用）
+    """
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            # 1. 检索（RLS 自动过滤）
+            rows = await conn.fetch(
+                """
+                SELECT c.doc_title, c.section_path, c.page_number,
+                       left(c.content, 500) AS snippet,
+                       d.version_label, d.category
+                FROM document_chunks c
+                JOIN documents d ON c.doc_id = d.doc_id
+                WHERE c.is_latest = TRUE
+                  AND c.content ILIKE '%' || $1 || '%'
+                LIMIT $2
+                """,
+                req.question,
+                req.limit,
+            )
+
+            if not rows:
+                return {"answer": "知识库中没有找到相关内容。",
+                        "citations": []}
+
+            # 2. 组装上下文
+            citations = []
+            context_parts = []
+            for i, r in enumerate(rows, 1):
+                cit = (f"《{r['doc_title']}》{r['version_label']}"
+                       f" - {r['section_path']}")
+                if r["page_number"]:
+                    cit += f"，第{r['page_number']}页"
+                citations.append(cit)
+                context_parts.append(f"[{i}] {cit}\n{r['snippet']}")
+
+            context = "\n\n".join(context_parts)
+
+            # 3. 隐私判断：健康类别强制本地
+            privacy = any(r["category"] == "04_Health_Archive" for r in rows)
+
+            # 4. LLM 组织答案
+            from model_adapter import get_adapter
+            adapter = get_adapter()
+            prompt = (
+                f"基于以下知识库内容回答问题。回答后必须列出引用来源。\n\n"
+                f"问题：{req.question}\n\n"
+                f"知识库内容：\n{context}\n\n"
+                "要求：\n"
+                "1. 只基于上述内容回答，不要编造\n"
+                "2. 每条关键信息标注来源编号如 [1]\n"
+                "3. 最后列出引用列表"
+            )
+            resp = await adapter.chat(prompt, privacy_sensitive=privacy,
+                                      caller="ask")
+
+            return {
+                "answer": resp.text,
+                "citations": citations,
+                "provider": resp.provider,
+                "privacy_routed_local": privacy,
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+    except RuntimeError as e:
+        # 模型未配置时降级：只返回检索结果
+        return {
+            "answer": f"模型未配置，返回原始检索结果：\n{context}",
+            "citations": citations,
+            "provider": "none (fallback)",
+            "warning": str(e),
+        }
+
+
+# ===== /ask：检索 → 权限过滤 → LLM 组织答案 =====
+class AskRequest(BaseModel):
+    question: str
+    limit: int = 5
+
+
+@app.post("/ask")
+async def ask_question(req: AskRequest, authorization: str = Header("")):
+    """
+    实时检索链路（对应架构图）：
+    PostgreSQL 检索 → RLS 权限过滤 → LLM 组织答案（带引用）
+    """
+    token = authorization.removeprefix("Bearer ").strip()
+    if not token:
+        raise HTTPException(401, "Missing token")
+    assert pool is not None
+
+    try:
+        async with profiled_connection(pool, token) as (conn, user_id):
+            # 1. 检索（RLS 自动过滤）
+            rows = await conn.fetch(
+                """
+                SELECT c.doc_title, c.section_path, c.page_number,
+                       left(c.content, 500) AS snippet,
+                       d.version_label, d.category
+                FROM document_chunks c
+                JOIN documents d ON c.doc_id = d.doc_id
+                WHERE c.is_latest = TRUE
+                  AND c.content ILIKE '%' || $1 || '%'
+                LIMIT $2
+                """,
+                req.question,
+                req.limit,
+            )
+
+            if not rows:
+                return {"answer": "知识库中没有找到相关内容。",
+                        "citations": []}
+
+            # 2. 组装上下文
+            citations = []
+            context_parts = []
+            for i, r in enumerate(rows, 1):
+                cit = (f"《{r['doc_title']}》{r['version_label']}"
+                       f" - {r['section_path']}")
+                if r["page_number"]:
+                    cit += f"，第{r['page_number']}页"
+                citations.append(cit)
+                context_parts.append(f"[{i}] {cit}\n{r['snippet']}")
+
+            context = "\n\n".join(context_parts)
+
+            # 3. 隐私判断：健康类别强制本地
+            privacy = any(r["category"] == "04_Health_Archive" for r in rows)
+
+            # 4. LLM 组织答案
+            from model_adapter import get_adapter
+            adapter = get_adapter()
+            prompt = (
+                f"基于以下知识库内容回答问题。回答后必须列出引用来源。\n\n"
+                f"问题：{req.question}\n\n"
+                f"知识库内容：\n{context}\n\n"
+                "要求：\n"
+                "1. 只基于上述内容回答，不要编造\n"
+                "2. 每条关键信息标注来源编号如 [1]\n"
+                "3. 最后列出引用列表"
+            )
+            resp = await adapter.chat(prompt, privacy_sensitive=privacy,
+                                      caller="ask")
+
+            return {
+                "answer": resp.text,
+                "citations": citations,
+                "provider": resp.provider,
+                "privacy_routed_local": privacy,
+            }
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+    except RuntimeError as e:
+        # 模型未配置时降级：只返回检索结果
+        return {
+            "answer": f"模型未配置，返回原始检索结果：\n{context}",
+            "citations": citations,
+            "provider": "none (fallback)",
+            "warning": str(e),
+        }
