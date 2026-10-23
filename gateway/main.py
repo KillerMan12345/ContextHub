@@ -334,6 +334,60 @@ class AskRequest(BaseModel):
     limit: int = 5
 
 
+def _extract_metric_answer(question: str, rows: list) -> dict | None:
+    """本地规则：从化验单 chunk 里提取指标数值（不调模型）。
+    匹配 "| 血清尿酸 | 435.65 | 208--428 | μmol/L | ↑ |" 这类表格行。
+    返回 {"answer": ..., "citations": [...]},提不到返回 None。
+    """
+    import re
+    kw = re.sub(r"(我的|你的|有多少|是多少|怎么样|如何|正常吗|吗|呢)", "",
+                question).strip()[:10]
+    if not kw:
+        return None
+    aliases = {"尿酸": ["尿酸", "URIC", "UA"],
+               "血糖": ["血糖", "葡萄糖", "GLU"],
+               "血压": ["血压"],
+               "胆固醇": ["胆固醇", "CHOL", "TC"],
+               "甘油三酯": ["甘油三酯", "TG"],
+               "肌酐": ["肌酐", "CREA", "CR"],
+               "尿素": ["尿素", "UREA", "BUN"]}
+    keys = aliases.get(kw, [kw])
+
+    best = None
+    for r in rows:
+        text = r.get("snippet", "") or ""
+        for line in text.split("\n"):
+            for k in keys:
+                if k not in line:
+                    continue
+                cells = [c.strip() for c in line.split("|")]
+                for i, c in enumerate(cells):
+                    if k in c and i + 1 < len(cells):
+                        m = re.search(r"(\d+\.?\d*)", cells[i + 1])
+                        if not m:
+                            continue
+                        value = m.group(1)
+                        ref = cells[i + 2] if i + 2 < len(cells) else ""
+                        unit = cells[i + 3] if i + 3 < len(cells) else ""
+                        abn = "↑偏高" if "↑" in line else ("↓偏低" if "↓" in line else "")
+                        title = r.get("doc_title", "")
+                        dm = re.search(r"(\d{4}-\d{2}-\d{2})", title)
+                        date_str = dm.group(1) if dm else ""
+                        cit = (f"《{title}》{r.get('version_label','')} - "
+                               f"{r.get('section_path','')}")
+                        if best is None or date_str > best[0]:
+                            best = (date_str, k, value, unit, ref, abn, cit)
+    if not best:
+        return None
+    date_str, k, value, unit, ref, abn, cit = best
+    ref_clean = ref.replace("--", "-").replace("－", "-") if ref else ""
+    ref_txt = f",参考范围 {ref_clean}" if ref_clean else ""
+    abn_txt = f"({abn})" if abn else ""
+    date_txt = f"({date_str}体检)" if date_str else ""
+    answer = f"{k}:{value} {unit}{abn_txt}{date_txt}{ref_txt}"
+    return {"answer": answer.strip(), "citations": [cit]}
+
+
 @app.post("/ask")
 async def ask_question(req: AskRequest, authorization: str = Header("")):
     token = authorization.removeprefix("Bearer ").strip()
@@ -356,7 +410,7 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
                     rows = await conn.fetch(
                         """
                         SELECT c.doc_title, c.section_path, c.page_number,
-                               left(c.content, 500) AS snippet,
+                               left(c.content, 2000) AS snippet,
                                d.version_label, d.category,
                                1 - (c.embedding <=> $1::vector) AS score
                         FROM document_chunks c
@@ -373,13 +427,13 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
                 pass
             # 2. 关键词检索（字面匹配，化验单数值表靠这个）
             try:
-                kw = re.sub(r"(我的|你的|多少|如何|什么|怎么|吗|呢|啊|一下|请问)", "",
+                kw = re.sub(r"(我的|你的|有多少|是多少|多少|如何|什么|怎么|吗|呢|啊|一下|请问|有|是)", "",
                             req.question).strip()
                 kw = kw[:20] if kw else req.question[:10]
                 kw_rows = await conn.fetch(
                     """
                     SELECT c.doc_title, c.section_path, c.page_number,
-                           left(c.content, 500) AS snippet,
+                           left(c.content, 2000) AS snippet,
                            d.version_label, d.category,
                            0.9 AS score
                     FROM document_chunks c
@@ -424,7 +478,16 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
             privacy = any(r["category"] == "04_Health_Archive" for r in rows)
 
             if privacy:
-                # 隐私红线：直接返回检索原文，不调任何模型
+                # 先尝试本地规则提取具体指标值（不调模型）
+                direct = _extract_metric_answer(req.question, rows)
+                if direct:
+                    return {
+                        "answer": direct["answer"],
+                        "citations": direct["citations"],
+                        "provider": "rule (privacy-safe)",
+                        "privacy_routed_local": True,
+                    }
+                # 提不到具体值才返回原文
                 return {
                     "answer": f"以下为知识库原文（隐私内容，未经模型处理）：\n\n{context}",
                     "citations": citations,
