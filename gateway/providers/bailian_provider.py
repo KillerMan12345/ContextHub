@@ -50,7 +50,7 @@ class BailianProvider(ModelProvider):
             r = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
-                json={"model": "qwen-vl-plus",
+                json={"model": "qwen3-vl-plus",
                       "messages": [{
                           "role": "user",
                           "content": [
