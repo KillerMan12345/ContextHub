@@ -482,24 +482,14 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
 
             context = "\n\n".join(context_parts)
 
-            # 隐私判断：健康类别不调模型
-            privacy = any(r["category"] == "04_Health_Archive" for r in rows)
-
-            if privacy:
-                # 先尝试本地规则提取具体指标值（不调模型）
-                direct = _extract_metric_answer(req.question, rows)
-                if direct:
-                    return {
-                        "answer": direct["answer"],
-                        "citations": direct["citations"],
-                        "provider": "rule (privacy-safe)",
-                        "privacy_routed_local": True,
-                    }
-                # 提不到具体值才返回原文
+            # 健康类：本地规则先试（快），提不到就走模型
+            # （用户明确要求模型直接答；健康文本会发到百炼 API）
+            direct = _extract_metric_answer(req.question, rows)
+            if direct:
                 return {
-                    "answer": f"以下为知识库原文（隐私内容，未经模型处理）：\n\n{context}",
-                    "citations": citations,
-                    "provider": "rule (privacy-safe)",
+                    "answer": direct["answer"],
+                    "citations": direct["citations"],
+                    "provider": "rule (fast-path)",
                     "privacy_routed_local": True,
                 }
 
