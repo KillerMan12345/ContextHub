@@ -81,15 +81,8 @@ def ask_contexthub(question: str) -> str:
         return f"知识库查询失败：{e}"
 
     answer = data.get("answer", "（无回答）")
-    citations = data.get("citations", [])
-
-    parts = [answer]
-    if citations:
-        parts.append("\n---\n引用来源：")
-        for i, c in enumerate(citations, 1):
-            parts.append(f"[{i}] {c}")
-
-    result = "\n".join(parts)
+    # 用户要求：回复里不带引用列表
+    result = answer
     if len(result) > MAX_REPLY_LEN:
         result = result[:MAX_REPLY_LEN] + "\n\n（内容过长已截断）"
     return result

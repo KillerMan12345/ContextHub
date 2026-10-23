@@ -497,13 +497,12 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
             from model_adapter import get_adapter
             adapter = get_adapter()
             prompt = (
-                f"基于以下知识库内容回答问题。回答后必须列出引用来源。\n\n"
+                f"基于以下知识库内容回答问题。直接给答案，不要列引用来源。\n\n"
                 f"问题：{req.question}\n\n"
                 f"知识库内容：\n{context}\n\n"
                 "要求：\n"
                 "1. 只基于上述内容回答，不要编造\n"
-                "2. 每条关键信息标注来源编号如 [1]\n"
-                "3. 最后列出引用列表"
+                "2. 直接给答案，不要标注来源编号，不要列引用列表"
             )
             try:
                 resp = await adapter.chat(prompt, caller="ask")
