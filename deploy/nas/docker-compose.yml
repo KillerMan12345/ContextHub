@@ -93,6 +93,26 @@ services:
     networks:
       - contexthub-net
 
+  feishu-bot:
+    image: python:3.12-slim
+    container_name: contexthub-feishu-bot
+    restart: unless-stopped
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      - FEISHU_APP_ID=${FEISHU_APP_ID}
+      - FEISHU_APP_SECRET=${FEISHU_APP_SECRET}
+      - GATEWAY_URL=http://gateway:8000
+      - GATEWAY_TOKEN=test-token-001
+    volumes:
+      - /volume1/docker/contexthub/gateway/feishu_bot.py:/app/feishu_bot.py:ro
+    command: >
+      sh -c "pip install -q -i https://pypi.tuna.tsinghua.edu.cn/simple lark-oapi httpx &&
+             python3 /app/feishu_bot.py"
+    networks:
+      - contexthub-net
+
 volumes:
   pgdata:
     driver: local

@@ -2,5 +2,6 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 asyncpg>=0.29
 pydantic>=2.6
-markitdown>=0.1.0
+markitdown[pdf,docx,xlsx]>=0.1.0
 mcp<2
+lark-oapi>=1.7
