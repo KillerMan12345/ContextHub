@@ -23,6 +23,7 @@ class TaskType(Enum):
     CHAT = "chat"
     VISION = "vision"
     EMBEDDING = "embedding"
+    EMBED = "embedding"
     CLASSIFY = "classify"
 
 
@@ -182,3 +183,14 @@ def get_adapter() -> ModelAdapter:
             from providers.bailian_provider import BailianProvider
             _adapter.register(BailianProvider())
     return _adapter
+
+_provider = None
+
+def get_provider():
+    """直接返回可用的 provider（用于 embedding 等绕过 adapter 路由的场景）"""
+    global _provider
+    if _provider is None:
+        if os.environ.get("BAILIAN_API_KEY"):
+            from providers.bailian_provider import BailianProvider
+            _provider = BailianProvider()
+    return _provider

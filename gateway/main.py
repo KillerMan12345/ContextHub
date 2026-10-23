@@ -343,20 +343,66 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
 
     try:
         async with profiled_connection(pool, token) as (conn, user_id):
-            rows = await conn.fetch(
-                """
-                SELECT c.doc_title, c.section_path, c.page_number,
-                       left(c.content, 500) AS snippet,
-                       d.version_label, d.category
-                FROM document_chunks c
-                JOIN documents d ON c.doc_id = d.doc_id
-                WHERE c.is_latest = TRUE
-                  AND c.content ILIKE '%' || $1 || '%'
-                LIMIT $2
-                """,
-                req.question,
-                req.limit,
-            )
+            # 混合检索：向量 + 关键词，两路合并
+            import re
+            rows = []
+            # 1. 向量语义检索
+            try:
+                from model_adapter import get_provider, TaskType
+                provider = get_provider()
+                if provider and provider.supports(TaskType.EMBED):
+                    qvec = await provider.embed(req.question)
+                    qvec_str = "[" + ",".join(map(str, qvec)) + "]"
+                    rows = await conn.fetch(
+                        """
+                        SELECT c.doc_title, c.section_path, c.page_number,
+                               left(c.content, 500) AS snippet,
+                               d.version_label, d.category,
+                               1 - (c.embedding <=> $1::vector) AS score
+                        FROM document_chunks c
+                        JOIN documents d ON c.doc_id = d.doc_id
+                        WHERE c.is_latest = TRUE
+                          AND c.embedding IS NOT NULL
+                        ORDER BY c.embedding <=> $1::vector
+                        LIMIT $2
+                        """,
+                        qvec_str,
+                        req.limit,
+                    )
+            except Exception:
+                pass
+            # 2. 关键词检索（字面匹配，化验单数值表靠这个）
+            try:
+                kw = re.sub(r"(我的|你的|多少|如何|什么|怎么|吗|呢|啊|一下|请问)", "",
+                            req.question).strip()
+                kw = kw[:20] if kw else req.question[:10]
+                kw_rows = await conn.fetch(
+                    """
+                    SELECT c.doc_title, c.section_path, c.page_number,
+                           left(c.content, 500) AS snippet,
+                           d.version_label, d.category,
+                           0.9 AS score
+                    FROM document_chunks c
+                    JOIN documents d ON c.doc_id = d.doc_id
+                    WHERE c.is_latest = TRUE
+                      AND c.content ILIKE '%' || $1 || '%'
+                    LIMIT $2
+                    """,
+                    kw,
+                    req.limit,
+                )
+                # 关键词结果优先（字面匹配更精准）
+                seen = {(r["doc_title"], r["section_path"]) for r in kw_rows}
+                merged = list(kw_rows)
+                for vr in rows:
+                    key = (vr["doc_title"], vr["section_path"])
+                    if key not in seen:
+                        merged.append(vr)
+                        seen.add(key)
+                rows = merged
+            except Exception:
+                pass
+            rows = rows[:req.limit]
 
             if not rows:
                 return {"answer": "知识库中没有找到相关内容。",
