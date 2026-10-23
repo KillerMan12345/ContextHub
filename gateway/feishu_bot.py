@@ -38,6 +38,25 @@ MAX_REPLY_LEN = 4000
 # 复用一个 lark Client 发回复
 _lark_client: lark.Client = None
 
+# 用户上下文：记住每个人上次问的指标（用于"此指标/这个"指代）
+_user_last_metric: dict[str, str] = {}
+import re as _re2
+_METRIC_WORDS = ["尿酸", "血糖", "血压", "胆固醇", "甘油三酯", "肌酐",
+                 "尿素", "血红蛋白", "白细胞", "血小板", "肝功能", "肾功能"]
+
+def _resolve_reference(user_id: str, text: str) -> str:
+    """把'此指标/这个/它'替换为上次问的指标"""
+    if _re2.search(r"(此指标|这个指标|这个|它)", text):
+        last = _user_last_metric.get(user_id, "")
+        if last:
+            text = _re2.sub(r"(此指标|这个指标|这个|它)", last, text)
+    # 记录本次问的指标
+    for w in _METRIC_WORDS:
+        if w in text:
+            _user_last_metric[user_id] = w
+            break
+    return text
+
 
 def get_client() -> lark.Client:
     global _lark_client
@@ -132,6 +151,11 @@ def handle_message(data: P2ImMessageReceiveV1):
     if not text:
         return
 
+    # 解析指代
+    sender_open_id = ""
+    if sender and hasattr(sender, "sender_id") and sender.sender_id:
+        sender_open_id = sender.sender_id.open_id or ""
+    text = _resolve_reference(sender_open_id, text)
     log.info(f"收到问题 ({msg.chat_type}): {text[:60]}")
     answer = ask_contexthub(text)
     log.info(f"回复 {len(answer)} 字")

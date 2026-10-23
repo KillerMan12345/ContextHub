@@ -340,7 +340,7 @@ def _extract_metric_answer(question: str, rows: list) -> dict | None:
     返回 {"answer": ..., "citations": [...]},提不到返回 None。
     """
     import re
-    kw = re.sub(r"(我的|你的|有多少|是多少|怎么样|如何|正常吗|吗|呢)", "",
+    kw = re.sub(r"(我的|你的|有多少|是多少|怎么样|如何|健康吗|正常吗|健康|正常|吗|呢)", "",
                 question).strip()[:10]
     if not kw:
         return None
@@ -384,7 +384,15 @@ def _extract_metric_answer(question: str, rows: list) -> dict | None:
     ref_txt = f",参考范围 {ref_clean}" if ref_clean else ""
     abn_txt = f"({abn})" if abn else ""
     date_txt = f"({date_str}体检)" if date_str else ""
-    answer = f"{k}:{value} {unit}{abn_txt}{date_txt}{ref_txt}"
+    # 如果问健康吗，给明确结论
+    if "健康" in question or "正常" in question:
+        if abn:
+            health = f"不健康，{abn}"
+        else:
+            health = "在正常范围内"
+        answer = f"{k}:{value} {unit}{date_txt}{ref_txt}。{health}"
+    else:
+        answer = f"{k}:{value} {unit}{abn_txt}{date_txt}{ref_txt}"
     return {"answer": answer.strip(), "citations": [cit]}
 
 
