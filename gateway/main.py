@@ -495,14 +495,19 @@ async def ask_question(req: AskRequest, authorization: str = Header("")):
 
             # 通用：LLM 组织答案
             from model_adapter import get_adapter
+            from datetime import datetime
+            today = datetime.now().strftime("%Y-%m-%d")
             adapter = get_adapter()
             prompt = (
                 f"基于以下知识库内容回答问题。直接给答案，不要列引用来源。\n\n"
+                f"今天是 {today}。\n"
                 f"问题：{req.question}\n\n"
                 f"知识库内容：\n{context}\n\n"
                 "要求：\n"
                 "1. 只基于上述内容回答，不要编造\n"
-                "2. 直接给答案，不要标注来源编号，不要列引用列表"
+                "2. 直接给答案，不要标注来源编号，不要列引用列表\n"
+                "3. 涉及'去年/今年/前年'等相对时间时，按今天的日期换算成具体年份；"
+                "如果知识库里没有该年份的数据，直接说明没有，不要用其他年份的顶替"
             )
             try:
                 resp = await adapter.chat(prompt, caller="ask")
